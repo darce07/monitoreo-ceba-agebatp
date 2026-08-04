@@ -22,10 +22,19 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!profile.ceba_id) return;
-    supabase.from('cebas').select('*').eq('id', profile.ceba_id).single().then(({ data }) => setCeba(data));
+    supabase
+      .from('cebas')
+      .select('*')
+      .eq('id', profile.ceba_id)
+      .single()
+      .then(({ data, error }) => {
+        if (error) setLoadError('No se pudo cargar tu CEBA. Revisa tu conexión e intenta de nuevo.');
+        else setCeba(data);
+      });
     loadFichas();
   }, [profile.ceba_id]);
 
@@ -83,6 +92,7 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
     loadFichas();
   }
 
+  if (loadError) return <p className="p-6 text-danger-600 text-sm">{loadError}</p>;
   if (!ceba) return <p className="p-6 text-slate-500 text-sm">Cargando datos de tu CEBA...</p>;
 
   return (

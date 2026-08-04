@@ -8,16 +8,22 @@ export default function Dashboard() {
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  function cargar() {
-    return Promise.all([
+  async function cargar() {
+    setError(null);
+    const [cebasRes, fichasRes] = await Promise.all([
       supabase.from('cebas').select('*').order('nombre'),
       supabase.from('fichas_monitoreo').select('*').order('created_at', { ascending: false }),
-    ]).then(([cebasRes, fichasRes]) => {
-      setCebas((cebasRes.data as Ceba[]) ?? []);
-      setFichas((fichasRes.data as Ficha[]) ?? []);
+    ]);
+    if (cebasRes.error || fichasRes.error) {
+      setError('No se pudo cargar la información. Revisa tu conexión e intenta de nuevo.');
       setLoading(false);
-    });
+      return;
+    }
+    setCebas((cebasRes.data as Ceba[]) ?? []);
+    setFichas((fichasRes.data as Ficha[]) ?? []);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -50,6 +56,16 @@ export default function Dashboard() {
     .sort((a, b) => b.fichas - a.fichas);
 
   if (loading) return <p className="p-6 text-slate-500 text-sm">Cargando dashboard...</p>;
+  if (error) {
+    return (
+      <div className="p-6">
+        <p className="text-sm text-danger-600 mb-3">{error}</p>
+        <button onClick={cargar} className="rounded-lg bg-brand-700 text-white text-sm px-4 py-2">
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
