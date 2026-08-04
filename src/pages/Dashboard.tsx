@@ -2,14 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { supabase, type Ceba, type Ficha } from '../lib/supabase';
 import { EstadoBadge } from './UploadFicha';
+import RevisionFichas from './RevisionFichas';
 
 export default function Dashboard() {
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([
+  function cargar() {
+    return Promise.all([
       supabase.from('cebas').select('*').order('nombre'),
       supabase.from('fichas_monitoreo').select('*').order('created_at', { ascending: false }),
     ]).then(([cebasRes, fichasRes]) => {
@@ -17,6 +18,10 @@ export default function Dashboard() {
       setFichas((fichasRes.data as Ficha[]) ?? []);
       setLoading(false);
     });
+  }
+
+  useEffect(() => {
+    cargar();
   }, []);
 
   const porCeba = useMemo(() => {
@@ -90,6 +95,8 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      <RevisionFichas fichas={fichas} cebas={cebas} onUpdated={cargar} />
     </div>
   );
 }

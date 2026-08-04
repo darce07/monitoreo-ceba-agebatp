@@ -167,12 +167,15 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
         <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
           {fichas.length === 0 && <p className="p-4 text-sm text-slate-400">Aún no subiste ninguna ficha.</p>}
           {fichas.map((f) => (
-            <div key={f.id} className="p-4 flex items-center justify-between text-sm">
+            <div key={f.id} className="p-4 flex items-center justify-between text-sm gap-4">
               <div>
                 <p className="font-medium text-slate-800">{f.nombre_pdf}</p>
                 <p className="text-slate-500">
                   {f.docente} · {f.area} · {f.fecha_monitoreo}
                 </p>
+                {f.estado === 'Observado' && f.observaciones && (
+                  <p className="text-danger-600 text-xs mt-1">Observación: {f.observaciones}</p>
+                )}
               </div>
               <EstadoBadge estado={f.estado} />
             </div>
