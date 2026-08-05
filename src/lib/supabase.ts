@@ -25,6 +25,7 @@ export type Ficha = {
   ceba_id: string;
   director_id: string | null;
   docente: string;
+  docente_id: string | null;
   area: string;
   fecha_monitoreo: string;
   n_monitoreo: string;
@@ -32,5 +33,13 @@ export type Ficha = {
   storage_path: string;
   estado: 'Pendiente' | 'Recibido' | 'Observado';
   observaciones: string | null;
+  deleted_at: string | null;
+  created_at: string;
+};
+
+export type Docente = {
+  id: string;
+  ceba_id: string;
+  nombre: string;
   created_at: string;
 };

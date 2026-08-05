@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { supabase, type Ceba, type Ficha } from '../lib/supabase';
 import { EstadoBadge } from './UploadFicha';
-import RevisionFichas from './RevisionFichas';
 
 export default function Dashboard() {
   const [cebas, setCebas] = useState<Ceba[]>([]);
@@ -111,8 +110,6 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
-
-      <RevisionFichas fichas={fichas} cebas={cebas} onUpdated={cargar} />
     </div>
   );
 }

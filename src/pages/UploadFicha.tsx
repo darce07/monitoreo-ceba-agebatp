@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { supabase, type Ceba, type Ficha, type Profile } from '../lib/supabase';
+import { supabase, type Ceba, type Docente, type Ficha, type Profile } from '../lib/supabase';
 
 const AREAS = ['Comunicación', 'Matemática', 'Ciencia y Tecnología', 'Ciencias Sociales', 'Otra'];
 const MESES = Array.from({ length: 12 }, (_, i) => `M${String(i + 1).padStart(2, '0')}`);
+const NUEVO_DOCENTE = '__nuevo__';
 
 function normaliza(texto: string) {
   return texto
@@ -15,7 +16,9 @@ function normaliza(texto: string) {
 export default function UploadFicha({ profile }: { profile: Profile }) {
   const [ceba, setCeba] = useState<Ceba | null>(null);
   const [fichas, setFichas] = useState<Ficha[]>([]);
-  const [docente, setDocente] = useState('');
+  const [docentes, setDocentes] = useState<Docente[]>([]);
+  const [docenteId, setDocenteId] = useState('');
+  const [nuevoDocenteNombre, setNuevoDocenteNombre] = useState('');
   const [area, setArea] = useState(AREAS[0]);
   const [fecha, setFecha] = useState('');
   const [nMonitoreo, setNMonitoreo] = useState(MESES[0]);
@@ -36,6 +39,7 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
         else setCeba(data);
       });
     loadFichas();
+    loadDocentes();
   }, [profile.ceba_id]);
 
   async function loadFichas() {
@@ -48,14 +52,47 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
     setFichas((data as Ficha[]) ?? []);
   }
 
+  async function loadDocentes() {
+    if (!profile.ceba_id) return;
+    const { data } = await supabase
+      .from('docentes')
+      .select('*')
+      .eq('ceba_id', profile.ceba_id)
+      .order('nombre');
+    setDocentes((data as Docente[]) ?? []);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!file || !ceba || !fecha) return;
+    if (!file || !ceba || !fecha || !docenteId) return;
+    if (docenteId === NUEVO_DOCENTE && !nuevoDocenteNombre.trim()) return;
     setSaving(true);
     setStatus(null);
 
+    let docenteFinal: Docente | null = docentes.find((d) => d.id === docenteId) ?? null;
+
+    if (docenteId === NUEVO_DOCENTE) {
+      const { data: nuevo, error: docenteError } = await supabase
+        .from('docentes')
+        .insert({ ceba_id: ceba.id, nombre: nuevoDocenteNombre.trim() })
+        .select()
+        .single();
+      if (docenteError) {
+        setStatus(`Error al registrar el docente: ${docenteError.message}`);
+        setSaving(false);
+        return;
+      }
+      docenteFinal = nuevo as Docente;
+      setDocentes((prev) => [...prev, docenteFinal!].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+    }
+
+    if (!docenteFinal) {
+      setSaving(false);
+      return;
+    }
+
     const fechaCompacta = fecha.replaceAll('-', '');
-    const nombrePdf = `${ceba.codigo}_${normaliza(docente)}_${fechaCompacta}_${nMonitoreo}.pdf`;
+    const nombrePdf = `${ceba.codigo}_${normaliza(docenteFinal.nombre)}_${fechaCompacta}_${nMonitoreo}.pdf`;
     const storagePath = `${ceba.codigo}/${nombrePdf}`;
 
     const { error: uploadError } = await supabase.storage
@@ -71,7 +108,8 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
     const { error: insertError } = await supabase.from('fichas_monitoreo').insert({
       ceba_id: ceba.id,
       director_id: profile.id,
-      docente,
+      docente: docenteFinal.nombre,
+      docente_id: docenteFinal.id,
       area,
       fecha_monitoreo: fecha,
       n_monitoreo: nMonitoreo,
@@ -87,7 +125,8 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
     }
 
     setStatus(`Ficha subida como ${nombrePdf}`);
-    setDocente('');
+    setDocenteId('');
+    setNuevoDocenteNombre('');
     setFile(null);
     loadFichas();
   }
@@ -106,12 +145,32 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Docente</label>
-            <input
+            <select
               required
-              value={docente}
-              onChange={(e) => setDocente(e.target.value)}
+              value={docenteId}
+              onChange={(e) => setDocenteId(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
+            >
+              <option value="" disabled>
+                Selecciona un docente
+              </option>
+              {docentes.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.nombre}
+                </option>
+              ))}
+              <option value={NUEVO_DOCENTE}>+ Agregar nuevo docente</option>
+            </select>
+            {docenteId === NUEVO_DOCENTE && (
+              <input
+                required
+                autoFocus
+                placeholder="Nombre del nuevo docente"
+                value={nuevoDocenteNombre}
+                onChange={(e) => setNuevoDocenteNombre(e.target.value)}
+                className="w-full mt-2 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Área</label>
