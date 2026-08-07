@@ -54,7 +54,8 @@ export default function Dashboard() {
     const recibidos = fichasAlcance.filter((f) => f.estado === 'Recibido' || f.estado === 'Observado').length;
     const observados = fichasAlcance.filter((f) => f.estado === 'Observado').length;
     const cebasSinFicha = porCeba.filter((c) => c.total === 0).length;
-    const avance = cebas.length ? Math.round((recibidos / cebas.length) * 100) : 0;
+    const cebasConAlMenosUna = porCeba.filter((c) => c.total > 0).length;
+    const avance = cebas.length ? Math.round((cebasConAlMenosUna / cebas.length) * 100) : 0;
     return { recibidos, observados, cebasSinFicha, avance };
   }, [fichasAlcance, porCeba, cebas.length]);
 
