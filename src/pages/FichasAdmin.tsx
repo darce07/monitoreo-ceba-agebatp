@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, Trash2, Pencil, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Trash2, Pencil, Eye, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase, type Ceba, type Docente, type Ficha } from '../lib/supabase';
+import { abrirFichaPdf } from '../lib/storage';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -19,6 +20,7 @@ export default function FichasAdmin() {
   const [filtroCeba, setFiltroCeba] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<Ficha['estado'] | ''>('');
   const [filtroDocente, setFiltroDocente] = useState('');
+  const [filtroMonitoreo, setFiltroMonitoreo] = useState('');
   const [filtroDesde, setFiltroDesde] = useState('');
   const [filtroHasta, setFiltroHasta] = useState('');
   const [page, setPage] = useState(1);
@@ -55,11 +57,12 @@ export default function FichasAdmin() {
       if (filtroCeba && f.ceba_id !== filtroCeba) return false;
       if (filtroEstado && f.estado !== filtroEstado) return false;
       if (filtroDocente && f.docente_id !== filtroDocente) return false;
+      if (filtroMonitoreo && f.n_monitoreo !== filtroMonitoreo) return false;
       if (filtroDesde && f.fecha_monitoreo < filtroDesde) return false;
       if (filtroHasta && f.fecha_monitoreo > filtroHasta) return false;
       return true;
     });
-  }, [fichas, filtroCeba, filtroEstado, filtroDocente, filtroDesde, filtroHasta]);
+  }, [fichas, filtroCeba, filtroEstado, filtroDocente, filtroMonitoreo, filtroDesde, filtroHasta]);
 
   const totalPages = Math.max(1, Math.ceil(fichasFiltradas.length / PAGE_SIZE));
   const pageClamped = Math.min(page, totalPages);
@@ -127,6 +130,21 @@ export default function FichasAdmin() {
             {docentes.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex-1 min-w-[140px]">
+          <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">N° Monitoreo</label>
+          <select
+            value={filtroMonitoreo}
+            onChange={(e) => aplicarFiltro(setFiltroMonitoreo, e.target.value)}
+            className="w-full bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 h-9 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+          >
+            <option value="">Todos (suma general)</option>
+            {MESES.map((m) => (
+              <option key={m} value={m}>
+                {m}
               </option>
             ))}
           </select>
@@ -209,9 +227,22 @@ export default function FichasAdmin() {
                   <td className="px-4 py-3 text-body-sm text-on-surface-variant">{f.fecha_monitoreo}</td>
                   <td className="px-4 py-3 text-label-md text-on-surface">{f.n_monitoreo}</td>
                   <td className="px-4 py-3">
-                    <span className="text-primary" title={f.nombre_pdf}>
-                      <FileText size={20} />
-                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => abrirFichaPdf(f.storage_path, false)}
+                        className="p-1 text-primary hover:bg-primary/10 rounded transition-colors"
+                        title="Ver PDF"
+                      >
+                        <Eye size={18} />
+                      </button>
+                      <button
+                        onClick={() => abrirFichaPdf(f.storage_path, true)}
+                        className="p-1 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                        title="Descargar PDF"
+                      >
+                        <Download size={18} />
+                      </button>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge estado={f.estado} />
@@ -348,6 +379,21 @@ function EditPanel({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          <div className="flex gap-2">
+            <button
+              onClick={() => abrirFichaPdf(ficha.storage_path, false)}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-outline-variant rounded-lg text-label-md text-on-surface hover:bg-surface-variant transition-colors"
+            >
+              <Eye size={16} /> Ver PDF
+            </button>
+            <button
+              onClick={() => abrirFichaPdf(ficha.storage_path, true)}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-outline-variant rounded-lg text-label-md text-on-surface hover:bg-surface-variant transition-colors"
+            >
+              <Download size={16} /> Descargar
+            </button>
+          </div>
+
           <div>
             <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Docente</label>
             <select

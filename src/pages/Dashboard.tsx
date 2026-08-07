@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { Building2, CheckCircle2, Hourglass, PieChart, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Building2, CheckCircle2, Hourglass, AlertOctagon, PieChart } from 'lucide-react';
 import { supabase, type Ceba, type Ficha } from '../lib/supabase';
+
+const MESES = Array.from({ length: 12 }, (_, i) => `M${String(i + 1).padStart(2, '0')}`);
 
 export default function Dashboard() {
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filtroMonitoreo, setFiltroMonitoreo] = useState('');
 
   async function cargar() {
     setError(null);
@@ -29,9 +32,14 @@ export default function Dashboard() {
     cargar();
   }, []);
 
+  const fichasAlcance = useMemo(
+    () => (filtroMonitoreo ? fichas.filter((f) => f.n_monitoreo === filtroMonitoreo) : fichas),
+    [fichas, filtroMonitoreo]
+  );
+
   const porCeba = useMemo(() => {
     return cebas.map((c) => {
-      const propias = fichas.filter((f) => f.ceba_id === c.id);
+      const propias = fichasAlcance.filter((f) => f.ceba_id === c.id);
       const observadas = propias.filter((f) => f.estado === 'Observado').length;
       return {
         ceba: c,
@@ -40,15 +48,15 @@ export default function Dashboard() {
         estado: propias.length === 0 ? 'Pendiente' : observadas > 0 ? 'Observado' : 'Recibido',
       };
     });
-  }, [cebas, fichas]);
+  }, [cebas, fichasAlcance]);
 
   const totales = useMemo(() => {
-    const recibidos = porCeba.filter((c) => c.estado === 'Recibido').length;
-    const observados = porCeba.filter((c) => c.estado === 'Observado').length;
-    const pendientes = porCeba.filter((c) => c.estado === 'Pendiente').length;
-    const avance = cebas.length ? Math.round(((recibidos + observados) / cebas.length) * 100) : 0;
-    return { recibidos, observados, pendientes, avance };
-  }, [porCeba, cebas.length]);
+    const recibidos = fichasAlcance.filter((f) => f.estado === 'Recibido' || f.estado === 'Observado').length;
+    const observados = fichasAlcance.filter((f) => f.estado === 'Observado').length;
+    const cebasSinFicha = porCeba.filter((c) => c.total === 0).length;
+    const avance = cebas.length ? Math.round((recibidos / cebas.length) * 100) : 0;
+    return { recibidos, observados, cebasSinFicha, avance };
+  }, [fichasAlcance, porCeba, cebas.length]);
 
   const chartData = porCeba
     .map((c) => ({ nombre: c.ceba.codigo, fichas: c.total }))
@@ -71,34 +79,56 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-headline-lg text-on-surface mb-1">Dashboard de Monitoreo</h2>
-          <p className="text-body-md text-on-surface-variant">Avance de las 17 CEBA — AGEBATP, UGEL 06</p>
+          <p className="text-body-md text-on-surface-variant">
+            {filtroMonitoreo ? `Solo ${filtroMonitoreo}` : 'Suma general de todos los monitoreos'} — AGEBATP, UGEL 06
+          </p>
+        </div>
+        <div>
+          <select
+            value={filtroMonitoreo}
+            onChange={(e) => setFiltroMonitoreo(e.target.value)}
+            className="bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 h-9 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+          >
+            <option value="">Todos los monitoreos (general)</option>
+            {MESES.map((m) => (
+              <option key={m} value={m}>
+                Solo {m}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard label="Total CEBA" value={cebas.length} icon={Building2} iconClass="text-primary" sub="Instituciones asignadas" />
         <KpiCard
           label="Fichas Recibidas"
-          value={totales.recibidos + totales.observados}
+          value={totales.recibidos}
           icon={CheckCircle2}
           iconClass="text-secondary"
           sub={`de ${cebas.length} CEBA`}
-          subIcon={TrendingUp}
         />
         <KpiCard
-          label="Fichas Pendientes"
-          value={totales.pendientes}
+          label="CEBA sin ficha"
+          value={totales.cebasSinFicha}
           icon={Hourglass}
           iconClass="text-tertiary"
-          sub={totales.pendientes > 0 ? 'Requiere atención' : 'Todo al día'}
-          subIcon={totales.pendientes > 0 ? AlertTriangle : undefined}
-          subClass={totales.pendientes > 0 ? 'text-error' : 'text-secondary'}
+          sub="Meta total aún sin definir (falta cronograma)"
+          subClass="text-on-surface-variant"
+        />
+        <KpiCard
+          label="Fichas Observadas"
+          value={totales.observados}
+          icon={AlertOctagon}
+          iconClass="text-error"
+          sub={totales.observados > 0 ? 'Con observaciones del especialista' : 'Ninguna observada'}
+          subClass={totales.observados > 0 ? 'text-error' : 'text-secondary'}
         />
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex flex-col justify-between relative overflow-hidden">
           <PieChart className="absolute right-0 bottom-0 opacity-10" size={100} />
           <div className="flex justify-between items-start mb-2 relative z-10">
-            <span className="text-label-sm text-on-surface-variant uppercase tracking-wide">% Avance Total</span>
+            <span className="text-label-sm text-on-surface-variant uppercase tracking-wide">% Avance</span>
             <PieChart size={20} className="text-secondary-container" />
           </div>
           <div className="relative z-10">
@@ -156,7 +186,6 @@ function KpiCard({
   icon: Icon,
   iconClass,
   sub,
-  subIcon: SubIcon,
   subClass,
 }: {
   label: string;
@@ -164,7 +193,6 @@ function KpiCard({
   icon: typeof Building2;
   iconClass: string;
   sub: string;
-  subIcon?: typeof TrendingUp;
   subClass?: string;
 }) {
   return (
@@ -175,10 +203,7 @@ function KpiCard({
       </div>
       <div>
         <div className="text-display-sm text-on-surface">{value}</div>
-        <div className={`text-label-md mt-1 flex items-center gap-1 ${subClass ?? 'text-on-surface-variant'}`}>
-          {SubIcon && <SubIcon size={12} />}
-          {sub}
-        </div>
+        <div className={`text-label-md mt-1 ${subClass ?? 'text-on-surface-variant'}`}>{sub}</div>
       </div>
     </div>
   );
@@ -192,7 +217,7 @@ const ESTADO_DOT: Record<string, string> = {
 
 const ESTADO_LABEL: Record<string, string> = {
   Recibido: 'Al día',
-  Pendiente: 'Pendiente',
+  Pendiente: 'Sin ficha',
   Observado: 'Observado',
 };
 
@@ -217,8 +242,8 @@ function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-6">
       <div className="h-8 w-64 rounded skeleton-loader" />
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[0, 1, 2, 3].map((i) => (
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {[0, 1, 2, 3, 4].map((i) => (
           <div key={i} className="h-28 rounded-xl skeleton-loader" />
         ))}
       </div>

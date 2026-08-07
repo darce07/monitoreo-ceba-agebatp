@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { UploadCloud, Bell, HelpCircle, LogOut } from 'lucide-react';
+import { UploadCloud, Bell, HelpCircle, LogOut, Eye, Download } from 'lucide-react';
 import { supabase, type Ceba, type Docente, type Ficha, type Profile } from '../lib/supabase';
+import { abrirFichaPdf } from '../lib/storage';
 import StatusBadge from '../components/StatusBadge';
 
 const AREAS = ['Comunicación', 'Matemática', 'Ciencia y Tecnología', 'Ciencias Sociales', 'Otra'];
@@ -298,7 +299,23 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
                     <p className="text-error text-label-sm mt-1">Observación: {f.observaciones}</p>
                   )}
                 </div>
-                <StatusBadge estado={f.estado} />
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => abrirFichaPdf(f.storage_path, false)}
+                    className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                    title="Ver PDF"
+                  >
+                    <Eye size={18} />
+                  </button>
+                  <button
+                    onClick={() => abrirFichaPdf(f.storage_path, true)}
+                    className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                    title="Descargar PDF"
+                  >
+                    <Download size={18} />
+                  </button>
+                  <StatusBadge estado={f.estado} />
+                </div>
               </div>
             ))}
           </div>
