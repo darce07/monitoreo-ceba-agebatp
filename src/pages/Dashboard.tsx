@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { Building2, CheckCircle2, Hourglass, PieChart, TrendingUp, AlertTriangle } from 'lucide-react';
 import { supabase, type Ceba, type Ficha } from '../lib/supabase';
-import { EstadoBadge } from './UploadFicha';
 
 export default function Dashboard() {
   const [cebas, setCebas] = useState<Ceba[]>([]);
@@ -54,12 +54,12 @@ export default function Dashboard() {
     .map((c) => ({ nombre: c.ceba.codigo, fichas: c.total }))
     .sort((a, b) => b.fichas - a.fichas);
 
-  if (loading) return <p className="p-6 text-slate-500 text-sm">Cargando dashboard...</p>;
+  if (loading) return <DashboardSkeleton />;
   if (error) {
     return (
       <div className="p-6">
-        <p className="text-sm text-danger-600 mb-3">{error}</p>
-        <button onClick={cargar} className="rounded-lg bg-brand-700 text-white text-sm px-4 py-2">
+        <p className="text-body-sm text-error mb-3">{error}</p>
+        <button onClick={cargar} className="rounded-md bg-primary text-on-primary text-label-md px-4 py-2">
           Reintentar
         </button>
       </div>
@@ -67,76 +67,162 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">Panel de monitoreo — AGEBATP</h1>
-        <p className="text-sm text-slate-500">Avance de las 17 CEBA en tiempo real</p>
-      </div>
-
-      <div className="grid grid-cols-4 gap-4">
-        <StatCard label="CEBA con fichas" value={totales.recibidos + totales.observados} suffix={`/ ${cebas.length}`} />
-        <StatCard label="Pendientes" value={totales.pendientes} tone="warn" />
-        <StatCard label="Observadas" value={totales.observados} tone="danger" />
-        <StatCard label="% de avance" value={`${totales.avance}%`} tone="brand" />
-      </div>
-
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
-        <h2 className="text-sm font-semibold text-slate-700 mb-4">Fichas recibidas por CEBA</h2>
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-            <XAxis dataKey="nombre" tick={{ fontSize: 11 }} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-            <Tooltip />
-            <Bar dataKey="fichas" fill="#0f766e" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
-        <div className="p-4 grid grid-cols-[1fr_auto_auto] gap-4 text-xs font-semibold text-slate-400 uppercase">
-          <span>CEBA / Director</span>
-          <span>Fichas</span>
-          <span>Estado</span>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-headline-lg text-on-surface mb-1">Dashboard de Monitoreo</h2>
+          <p className="text-body-md text-on-surface-variant">Avance de las 17 CEBA — AGEBATP, UGEL 06</p>
         </div>
-        {porCeba.map(({ ceba, total, estado }) => (
-          <div key={ceba.id} className="p-4 grid grid-cols-[1fr_auto_auto] gap-4 items-center text-sm">
-            <div>
-              <p className="font-medium text-slate-800">{ceba.nombre}</p>
-              <p className="text-slate-500">{ceba.director_nombre}</p>
-            </div>
-            <span className="text-slate-600">{total}</span>
-            <EstadoBadge estado={estado as Ficha['estado']} />
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard label="Total CEBA" value={cebas.length} icon={Building2} iconClass="text-primary" sub="Instituciones asignadas" />
+        <KpiCard
+          label="Fichas Recibidas"
+          value={totales.recibidos + totales.observados}
+          icon={CheckCircle2}
+          iconClass="text-secondary"
+          sub={`de ${cebas.length} CEBA`}
+          subIcon={TrendingUp}
+        />
+        <KpiCard
+          label="Fichas Pendientes"
+          value={totales.pendientes}
+          icon={Hourglass}
+          iconClass="text-tertiary"
+          sub={totales.pendientes > 0 ? 'Requiere atención' : 'Todo al día'}
+          subIcon={totales.pendientes > 0 ? AlertTriangle : undefined}
+          subClass={totales.pendientes > 0 ? 'text-error' : 'text-secondary'}
+        />
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex flex-col justify-between relative overflow-hidden">
+          <PieChart className="absolute right-0 bottom-0 opacity-10" size={100} />
+          <div className="flex justify-between items-start mb-2 relative z-10">
+            <span className="text-label-sm text-on-surface-variant uppercase tracking-wide">% Avance Total</span>
+            <PieChart size={20} className="text-secondary-container" />
           </div>
-        ))}
+          <div className="relative z-10">
+            <div className="text-display-sm text-on-surface">{totales.avance}%</div>
+            <div className="w-full bg-surface-variant rounded-full h-1.5 mt-2 mb-1">
+              <div className="bg-primary h-1.5 rounded-full" style={{ width: `${totales.avance}%` }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col">
+          <h3 className="text-headline-sm text-on-surface mb-4">Fichas subidas por CEBA</h3>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" opacity={0.3} />
+              <XAxis dataKey="nombre" tick={{ fontSize: 11 }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Bar dataKey="fichas" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="xl:col-span-1 bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col overflow-hidden">
+          <div className="p-4 border-b border-outline-variant bg-surface-container-low/50">
+            <h3 className="text-headline-sm text-on-surface">Resumen por CEBA</h3>
+          </div>
+          <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
+            <table className="w-full text-left border-collapse">
+              <thead className="sticky top-0 bg-surface-bright">
+                <tr className="border-b border-outline-variant text-label-sm text-on-surface-variant">
+                  <th className="py-2 px-4 font-medium">CEBA</th>
+                  <th className="py-2 px-4 font-medium text-center">Fichas</th>
+                  <th className="py-2 px-4 font-medium">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="text-body-sm">
+                {porCeba.map(({ ceba, total, estado }) => (
+                  <EstadoRow key={ceba.id} nombre={ceba.nombre} total={total} estado={estado} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function StatCard({
+function KpiCard({
   label,
   value,
-  suffix,
-  tone = 'default',
+  icon: Icon,
+  iconClass,
+  sub,
+  subIcon: SubIcon,
+  subClass,
 }: {
   label: string;
   value: string | number;
-  suffix?: string;
-  tone?: 'default' | 'warn' | 'danger' | 'brand';
+  icon: typeof Building2;
+  iconClass: string;
+  sub: string;
+  subIcon?: typeof TrendingUp;
+  subClass?: string;
 }) {
-  const toneClass = {
-    default: 'text-slate-900',
-    warn: 'text-accent-600',
-    danger: 'text-danger-600',
-    brand: 'text-brand-700',
-  }[tone];
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4">
-      <p className="text-xs text-slate-500 mb-1">{label}</p>
-      <p className={`text-2xl font-semibold ${toneClass}`}>
-        {value} {suffix && <span className="text-sm text-slate-400 font-normal">{suffix}</span>}
-      </p>
+    <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex flex-col justify-between">
+      <div className="flex justify-between items-start mb-2">
+        <span className="text-label-sm text-on-surface-variant uppercase tracking-wide">{label}</span>
+        <Icon size={20} className={iconClass} />
+      </div>
+      <div>
+        <div className="text-display-sm text-on-surface">{value}</div>
+        <div className={`text-label-md mt-1 flex items-center gap-1 ${subClass ?? 'text-on-surface-variant'}`}>
+          {SubIcon && <SubIcon size={12} />}
+          {sub}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const ESTADO_DOT: Record<string, string> = {
+  Recibido: 'bg-[#16a34a]',
+  Pendiente: 'bg-[#ca8a04]',
+  Observado: 'bg-error',
+};
+
+const ESTADO_LABEL: Record<string, string> = {
+  Recibido: 'Al día',
+  Pendiente: 'Pendiente',
+  Observado: 'Observado',
+};
+
+function EstadoRow({ nombre, total, estado }: { nombre: string; total: number; estado: string }) {
+  return (
+    <tr className="border-b border-outline-variant hover:bg-surface-variant/30 transition-colors">
+      <td className="py-3 px-4 text-on-surface font-medium">{nombre}</td>
+      <td className="py-3 px-4 text-center text-on-surface-variant">{total}</td>
+      <td className="py-3 px-4">
+        <div className="flex items-center gap-2">
+          <div className={`w-2.5 h-2.5 rounded-full ${ESTADO_DOT[estado]}`} />
+          <span className={`text-[11px] font-medium uppercase ${estado === 'Observado' ? 'text-error' : 'text-on-surface-variant'}`}>
+            {ESTADO_LABEL[estado]}
+          </span>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="h-8 w-64 rounded skeleton-loader" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-28 rounded-xl skeleton-loader" />
+        ))}
+      </div>
+      <div className="h-72 rounded-xl skeleton-loader" />
     </div>
   );
 }
