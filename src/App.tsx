@@ -43,7 +43,7 @@ export default function App() {
 
   if (profile.role === 'admin') {
     return (
-      <AdminShell tab={tab} onTabChange={setTab} title={TAB_TITLES[tab]}>
+      <AdminShell tab={tab} onTabChange={setTab} title={TAB_TITLES[tab]} profile={profile}>
         <Suspense fallback={<div className="h-8 w-64 rounded skeleton-loader" />}>
           {tab === 'resumen' && <Dashboard />}
           {tab === 'fichas' && <FichasAdmin />}

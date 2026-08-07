@@ -8,6 +8,11 @@ const AREAS = ['Comunicación', 'Matemática', 'Ciencia y Tecnología', 'Ciencia
 const MESES = Array.from({ length: 12 }, (_, i) => `M${String(i + 1).padStart(2, '0')}`);
 const NUEVO_DOCENTE = '__nuevo__';
 
+function iniciales(nombre: string) {
+  const partes = nombre.trim().split(/\s+/);
+  return ((partes[0]?.[0] ?? '') + (partes[1]?.[0] ?? '')).toUpperCase() || 'D';
+}
+
 function normaliza(texto: string) {
   return texto
     .normalize('NFD')
@@ -153,6 +158,17 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
           <button className="text-on-surface-variant hover:bg-surface-container-low transition-colors p-2 rounded-full hidden sm:block">
             <HelpCircle size={20} />
           </button>
+          {ceba?.director_nombre && (
+            <div className="flex items-center gap-2 pl-2">
+              <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-sm font-bold shrink-0">
+                {iniciales(ceba.director_nombre)}
+              </div>
+              <div className="hidden sm:block leading-tight">
+                <p className="text-label-md text-on-surface">{ceba.director_nombre}</p>
+                <p className="text-label-sm text-on-surface-variant">Director de CEBA</p>
+              </div>
+            </div>
+          )}
           <button
             onClick={() => supabase.auth.signOut()}
             className="text-on-surface-variant hover:bg-surface-container-low transition-colors p-2 rounded-full"

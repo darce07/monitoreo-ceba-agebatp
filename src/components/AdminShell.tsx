@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { LayoutDashboard, FileText, Users, Bell, HelpCircle, ChevronDown, LogOut } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { LayoutDashboard, FileText, Users, Bell, HelpCircle, LogOut } from 'lucide-react';
+import { supabase, type Profile } from '../lib/supabase';
 
 export type AdminTab = 'resumen' | 'fichas' | 'docentes';
 
@@ -10,15 +10,27 @@ const NAV_ITEMS: { id: AdminTab; label: string; icon: typeof LayoutDashboard }[]
   { id: 'docentes', label: 'Gestión Docente', icon: Users },
 ];
 
+function iniciales(nombre: string | null) {
+  const partes = (nombre ?? '').trim().split(/\s+/);
+  return ((partes[0]?.[0] ?? '') + (partes[1]?.[0] ?? '')).toUpperCase() || 'A';
+}
+
+const ROL_LABEL: Record<Profile['role'], string> = {
+  admin: 'Especialista AGEBATP',
+  director: 'Director de CEBA',
+};
+
 export default function AdminShell({
   tab,
   onTabChange,
   title,
+  profile,
   children,
 }: {
   tab: AdminTab;
   onTabChange: (t: AdminTab) => void;
   title: string;
+  profile: Profile;
   children: ReactNode;
 }) {
   return (
@@ -56,6 +68,17 @@ export default function AdminShell({
             );
           })}
         </nav>
+        <div className="px-4 pt-4 mt-2 border-t border-outline-variant/50">
+          <div className="flex items-center gap-3 px-2 py-2">
+            <div className="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-md font-bold shrink-0">
+              {iniciales(profile.nombre)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-label-md text-on-surface truncate">{profile.nombre}</p>
+              <p className="text-label-sm text-on-surface-variant truncate">{ROL_LABEL[profile.role]}</p>
+            </div>
+          </div>
+        </div>
       </aside>
 
       {/* Main wrapper */}
@@ -73,6 +96,15 @@ export default function AdminShell({
               <HelpCircle size={22} />
             </button>
             <div className="h-6 w-px bg-outline-variant mx-2 hidden sm:block" />
+            <div className="flex items-center gap-2 pl-1">
+              <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-sm font-bold shrink-0">
+                {iniciales(profile.nombre)}
+              </div>
+              <div className="hidden md:block leading-tight">
+                <p className="text-label-md text-on-surface">{profile.nombre}</p>
+                <p className="text-label-sm text-on-surface-variant">{ROL_LABEL[profile.role]}</p>
+              </div>
+            </div>
             <button
               onClick={() => supabase.auth.signOut()}
               className="flex items-center gap-2 hover:bg-surface-container-low pl-2 pr-3 py-1.5 rounded-full transition-colors text-on-surface-variant"
