@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { useProfile } from './lib/useProfile';
 import Login from './pages/Login';
 import UploadFicha from './pages/UploadFicha';
-import Dashboard from './pages/Dashboard';
-import FichasAdmin from './pages/FichasAdmin';
-import Docentes from './pages/Docentes';
 import AdminShell, { type AdminTab } from './components/AdminShell';
+
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const FichasAdmin = lazy(() => import('./pages/FichasAdmin'));
+const Docentes = lazy(() => import('./pages/Docentes'));
 
 const TAB_TITLES: Record<AdminTab, string> = {
   resumen: 'Plataforma de Monitoreo Pedagógico',
@@ -43,9 +44,11 @@ export default function App() {
   if (profile.role === 'admin') {
     return (
       <AdminShell tab={tab} onTabChange={setTab} title={TAB_TITLES[tab]}>
-        {tab === 'resumen' && <Dashboard />}
-        {tab === 'fichas' && <FichasAdmin />}
-        {tab === 'docentes' && <Docentes />}
+        <Suspense fallback={<div className="h-8 w-64 rounded skeleton-loader" />}>
+          {tab === 'resumen' && <Dashboard />}
+          {tab === 'fichas' && <FichasAdmin />}
+          {tab === 'docentes' && <Docentes />}
+        </Suspense>
       </AdminShell>
     );
   }
