@@ -79,7 +79,7 @@ export default function FichasAdmin() {
   async function eliminar(ficha: Ficha) {
     setError(null);
     setBorrando(true);
-    const { error } = await supabase.from("fichas_monitoreo").update({ deleted_at: new Date().toISOString() }).eq("id", ficha.id);
+    const { error } = await supabase.rpc("soft_delete_ficha", { p_ficha_id: ficha.id });
     setBorrando(false);
     if (error) {
       setError(`Error al eliminar: ${error.message}`);
