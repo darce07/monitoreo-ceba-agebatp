@@ -1,23 +1,25 @@
-import { useEffect, useState } from 'react';
-import { UploadCloud, Bell, HelpCircle, LogOut, Eye, Download } from 'lucide-react';
-import { supabase, type Ceba, type Docente, type Ficha, type Profile } from '../lib/supabase';
-import { abrirFichaPdf } from '../lib/storage';
-import StatusBadge from '../components/StatusBadge';
+import { useEffect, useState } from "react";
+import { UploadCloud, Bell, HelpCircle, LogOut, Eye, Download } from "lucide-react";
+import { supabase, type Ceba, type Docente, type Ficha, type Profile } from "../lib/supabase";
+import { abrirFichaPdf } from "../lib/storage";
+import { ESTADO_TONE } from "../lib/utils";
+import { Card, Button, Select, Input, Badge, Alert } from "../components/ui";
+import { Field } from "../components/form-field";
 
-const AREAS = ['Comunicación', 'Matemática', 'Ciencia y Tecnología', 'Ciencias Sociales', 'Otra'];
-const MESES = Array.from({ length: 12 }, (_, i) => `M${String(i + 1).padStart(2, '0')}`);
-const NUEVO_DOCENTE = '__nuevo__';
+const AREAS = ["Comunicación", "Matemática", "Ciencia y Tecnología", "Ciencias Sociales", "Otra"];
+const MESES = Array.from({ length: 12 }, (_, i) => `M${String(i + 1).padStart(2, "0")}`);
+const NUEVO_DOCENTE = "__nuevo__";
 
 function iniciales(nombre: string) {
   const partes = nombre.trim().split(/\s+/);
-  return ((partes[0]?.[0] ?? '') + (partes[1]?.[0] ?? '')).toUpperCase() || 'D';
+  return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase() || "D";
 }
 
 function normaliza(texto: string) {
   return texto
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-zA-Z0-9]+/g, '')
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "")
     .toUpperCase();
 }
 
@@ -25,10 +27,10 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
   const [ceba, setCeba] = useState<Ceba | null>(null);
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [docentes, setDocentes] = useState<Docente[]>([]);
-  const [docenteId, setDocenteId] = useState('');
-  const [nuevoDocenteNombre, setNuevoDocenteNombre] = useState('');
+  const [docenteId, setDocenteId] = useState("");
+  const [nuevoDocenteNombre, setNuevoDocenteNombre] = useState("");
   const [area, setArea] = useState(AREAS[0]);
-  const [fecha, setFecha] = useState('');
+  const [fecha, setFecha] = useState("");
   const [nMonitoreo, setNMonitoreo] = useState(MESES[0]);
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -40,12 +42,12 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
   useEffect(() => {
     if (!profile.ceba_id) return;
     supabase
-      .from('cebas')
-      .select('*')
-      .eq('id', profile.ceba_id)
+      .from("cebas")
+      .select("*")
+      .eq("id", profile.ceba_id)
       .single()
       .then(({ data, error }) => {
-        if (error) setLoadError('No se pudo cargar tu CEBA. Revisa tu conexión e intenta de nuevo.');
+        if (error) setLoadError("No se pudo cargar tu CEBA. Revisa tu conexión e intenta de nuevo.");
         else setCeba(data);
       });
     loadFichas();
@@ -54,21 +56,13 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
 
   async function loadFichas() {
     if (!profile.ceba_id) return;
-    const { data } = await supabase
-      .from('fichas_monitoreo')
-      .select('*')
-      .eq('ceba_id', profile.ceba_id)
-      .order('created_at', { ascending: false });
+    const { data } = await supabase.from("fichas_monitoreo").select("*").eq("ceba_id", profile.ceba_id).order("created_at", { ascending: false });
     setFichas((data as Ficha[]) ?? []);
   }
 
   async function loadDocentes() {
     if (!profile.ceba_id) return;
-    const { data } = await supabase
-      .from('docentes')
-      .select('*')
-      .eq('ceba_id', profile.ceba_id)
-      .order('nombre');
+    const { data } = await supabase.from("docentes").select("*").eq("ceba_id", profile.ceba_id).order("nombre");
     setDocentes((data as Docente[]) ?? []);
   }
 
@@ -83,7 +77,7 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
 
     if (docenteId === NUEVO_DOCENTE) {
       const { data: nuevo, error: docenteError } = await supabase
-        .from('docentes')
+        .from("docentes")
         .insert({ ceba_id: ceba.id, nombre: nuevoDocenteNombre.trim() })
         .select()
         .single();
@@ -102,13 +96,11 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
       return;
     }
 
-    const fechaCompacta = fecha.replaceAll('-', '');
+    const fechaCompacta = fecha.replaceAll("-", "");
     const nombrePdf = `${ceba.codigo}_${normaliza(docenteFinal.nombre)}_${fechaCompacta}_${nMonitoreo}.pdf`;
     const storagePath = `${ceba.codigo}/${nombrePdf}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('fichas_monitoreo')
-      .upload(storagePath, file, { upsert: true, contentType: 'application/pdf' });
+    const { error: uploadError } = await supabase.storage.from("fichas_monitoreo").upload(storagePath, file, { upsert: true, contentType: "application/pdf" });
 
     if (uploadError) {
       setStatus(`Error al subir el archivo: ${uploadError.message}`);
@@ -117,7 +109,7 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
       return;
     }
 
-    const { error: insertError } = await supabase.from('fichas_monitoreo').insert({
+    const { error: insertError } = await supabase.from("fichas_monitoreo").insert({
       ceba_id: ceba.id,
       director_id: profile.id,
       docente: docenteFinal.nombre,
@@ -127,7 +119,7 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
       n_monitoreo: nMonitoreo,
       nombre_pdf: nombrePdf,
       storage_path: storagePath,
-      estado: 'Recibido',
+      estado: "Recibido",
     });
 
     setSaving(false);
@@ -139,200 +131,131 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
 
     setStatus(`Ficha subida como ${nombrePdf}`);
     setStatusError(false);
-    setDocenteId('');
-    setNuevoDocenteNombre('');
+    setDocenteId("");
+    setNuevoDocenteNombre("");
     setFile(null);
     setShowForm(false);
     loadFichas();
   }
 
   return (
-    <div className="bg-background text-on-surface min-h-screen pb-24">
-      <header className="flex justify-between items-center px-gutter w-full sticky top-0 z-30 bg-surface h-topbar-height border-b border-outline-variant">
-        <span className="text-headline-sm text-on-surface">Monitoreo CEBA</span>
-        <div className="flex items-center gap-1">
-          <button className="text-on-surface-variant hover:bg-surface-container-low transition-colors p-2 rounded-full relative">
-            <Bell size={20} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
+    <div className="min-h-screen bg-slate-50 pb-24 dark:bg-slate-950">
+      <header className="safe-top sticky top-0 z-30 flex h-20 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/85 sm:px-6">
+        <span className="font-serif text-base font-bold text-slate-900 dark:text-white">Monitoreo CEBA</span>
+        <div className="ml-auto flex items-center gap-1">
+          <button className="relative grid size-10 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+            <Bell className="size-5" />
           </button>
-          <button className="text-on-surface-variant hover:bg-surface-container-low transition-colors p-2 rounded-full hidden sm:block">
-            <HelpCircle size={20} />
+          <button className="hidden size-10 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 sm:grid">
+            <HelpCircle className="size-5" />
           </button>
           {ceba?.director_nombre && (
-            <div className="flex items-center gap-2 pl-2">
-              <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-sm font-bold shrink-0">
-                {iniciales(ceba.director_nombre)}
+            <div className="ml-1 flex items-center gap-2 border-l border-slate-200 pl-3 dark:border-slate-800">
+              <div className="hidden text-right sm:block">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{ceba.director_nombre}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Director de CEBA</p>
               </div>
-              <div className="hidden sm:block leading-tight">
-                <p className="text-label-md text-on-surface">{ceba.director_nombre}</p>
-                <p className="text-label-sm text-on-surface-variant">Director de CEBA</p>
+              <div className="grid size-10 place-items-center rounded-xl bg-teal-100 text-sm font-bold text-teal-800 dark:bg-teal-950 dark:text-teal-300">
+                {iniciales(ceba.director_nombre)}
               </div>
             </div>
           )}
-          <button
-            onClick={() => supabase.auth.signOut()}
-            className="text-on-surface-variant hover:bg-surface-container-low transition-colors p-2 rounded-full"
-            title="Cerrar sesión"
-          >
-            <LogOut size={20} />
+          <button onClick={() => supabase.auth.signOut()} className="grid size-10 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" title="Cerrar sesión">
+            <LogOut className="size-5" />
           </button>
         </div>
       </header>
 
-      <main className="px-container-padding py-stack-default flex flex-col gap-stack-default max-w-3xl mx-auto">
-        {loadError && <p className="text-body-sm text-error">{loadError}</p>}
+      <main className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-4 sm:px-6">
+        {loadError && <Alert variant="error">{loadError}</Alert>}
 
         {ceba && (
           <section className="mb-2">
-            <h1 className="text-headline-lg text-primary mb-1">{ceba.nombre}</h1>
-            <p className="text-body-md text-on-surface-variant">Código {ceba.codigo} · Monitoreo pedagógico AGEBATP</p>
+            <h1 className="font-serif text-2xl font-bold text-slate-950 dark:text-white">{ceba.nombre}</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Código {ceba.codigo} · Monitoreo pedagógico AGEBATP</p>
           </section>
         )}
 
-        <section>
-          <button
-            onClick={() => setShowForm((v) => !v)}
-            className="w-full flex flex-col items-center justify-center p-6 bg-primary text-on-primary rounded-xl shadow-sm hover:opacity-90 active:scale-[0.98] transition-all"
-          >
-            <UploadCloud size={36} className="mb-2" />
-            <span className="text-headline-sm">{showForm ? 'Cerrar formulario' : 'Subir Ficha PDF'}</span>
-          </button>
-        </section>
+        <Button onClick={() => setShowForm((v) => !v)} className="w-full py-6 text-base">
+          <UploadCloud className="size-6" />
+          {showForm ? "Cerrar formulario" : "Subir Ficha PDF"}
+        </Button>
 
         {showForm && (
-          <form onSubmit={handleSubmit} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Docente</label>
-                <select
-                  required
-                  value={docenteId}
-                  onChange={(e) => setDocenteId(e.target.value)}
-                  className="w-full bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 h-10 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                >
-                  <option value="" disabled>
-                    Selecciona un docente
-                  </option>
-                  {docentes.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.nombre}
+          <Card className="space-y-4 p-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Docente" className="col-span-2 block sm:col-span-1">
+                  <Select required value={docenteId} onChange={(e) => setDocenteId(e.target.value)} className="w-full">
+                    <option value="" disabled>
+                      Selecciona un docente
                     </option>
-                  ))}
-                  <option value={NUEVO_DOCENTE}>+ Agregar nuevo docente</option>
-                </select>
-                {docenteId === NUEVO_DOCENTE && (
-                  <input
-                    required
-                    autoFocus
-                    placeholder="Nombre del nuevo docente"
-                    value={nuevoDocenteNombre}
-                    onChange={(e) => setNuevoDocenteNombre(e.target.value)}
-                    className="w-full mt-2 bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 h-10 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                  />
-                )}
+                    {docentes.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.nombre}
+                      </option>
+                    ))}
+                    <option value={NUEVO_DOCENTE}>+ Agregar nuevo docente</option>
+                  </Select>
+                  {docenteId === NUEVO_DOCENTE && (
+                    <Input required autoFocus placeholder="Nombre del nuevo docente" value={nuevoDocenteNombre} onChange={(e) => setNuevoDocenteNombre(e.target.value)} className="mt-2 w-full" />
+                  )}
+                </Field>
+                <Field label="Área" className="col-span-2 block sm:col-span-1">
+                  <Select value={area} onChange={(e) => setArea(e.target.value)} className="w-full">
+                    {AREAS.map((a) => (
+                      <option key={a}>{a}</option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Fecha de monitoreo" className="block">
+                  <Input type="date" required value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full" />
+                </Field>
+                <Field label="N° de monitoreo" className="block">
+                  <Select value={nMonitoreo} onChange={(e) => setNMonitoreo(e.target.value)} className="w-full">
+                    {MESES.map((m) => (
+                      <option key={m}>{m}</option>
+                    ))}
+                  </Select>
+                </Field>
               </div>
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Área</label>
-                <select
-                  value={area}
-                  onChange={(e) => setArea(e.target.value)}
-                  className="w-full bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 h-10 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                >
-                  {AREAS.map((a) => (
-                    <option key={a}>{a}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Fecha de monitoreo</label>
-                <input
-                  type="date"
-                  required
-                  value={fecha}
-                  onChange={(e) => setFecha(e.target.value)}
-                  className="w-full bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 h-10 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">N° de monitoreo</label>
-                <select
-                  value={nMonitoreo}
-                  onChange={(e) => setNMonitoreo(e.target.value)}
-                  className="w-full bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 h-10 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                >
-                  {MESES.map((m) => (
-                    <option key={m}>{m}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
 
-            <div>
-              <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Ficha en PDF</label>
-              <input
-                type="file"
-                accept="application/pdf"
-                required
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="w-full text-body-sm"
-              />
-              <p className="text-label-sm text-on-surface-variant mt-1">
-                El nombre del archivo se genera automáticamente al subir.
-              </p>
-            </div>
+              <Field label="Ficha en PDF" hint="El nombre del archivo se genera automáticamente al subir." className="block">
+                <input type="file" accept="application/pdf" required onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="w-full text-sm" />
+              </Field>
 
-            {status && <p className={`text-body-sm ${statusError ? 'text-error' : 'text-primary'}`}>{status}</p>}
+              {status && <Alert variant={statusError ? "error" : "info"}>{status}</Alert>}
 
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full sm:w-auto rounded-lg bg-primary text-on-primary text-label-md px-5 py-2.5 hover:bg-surface-tint disabled:opacity-60 transition-colors"
-            >
-              {saving ? 'Subiendo...' : 'Subir ficha'}
-            </button>
-          </form>
+              <Button type="submit" loading={saving} className="w-full sm:w-auto">
+                Subir ficha
+              </Button>
+            </form>
+          </Card>
         )}
 
         <section className="mt-2">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-headline-md text-on-surface">Mis Fichas Recientes</h2>
-          </div>
+          <h2 className="mb-4 font-serif text-lg font-bold text-slate-950 dark:text-white">Mis Fichas Recientes</h2>
           <div className="flex flex-col gap-3">
-            {fichas.length === 0 && (
-              <p className="text-body-sm text-on-surface-variant">Aún no subiste ninguna ficha.</p>
-            )}
+            {fichas.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Aún no subiste ninguna ficha.</p>}
             {fichas.map((f) => (
-              <div
-                key={f.id}
-                className="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-surface-container-low transition-colors"
-              >
+              <Card key={f.id} className="flex flex-col items-start justify-between gap-3 p-4 sm:flex-row sm:items-center">
                 <div>
-                  <h3 className="text-headline-sm text-on-surface mb-1">{f.docente}</h3>
-                  <p className="text-body-sm text-on-surface-variant">
+                  <h3 className="font-semibold text-slate-900 dark:text-white">{f.docente}</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     {f.area} · {f.fecha_monitoreo} · {f.n_monitoreo}
                   </p>
-                  {f.estado === 'Observado' && f.observaciones && (
-                    <p className="text-error text-label-sm mt-1">Observación: {f.observaciones}</p>
-                  )}
+                  {f.estado === "Observado" && f.observaciones && <p className="mt-1 text-xs text-rose-600">Observación: {f.observaciones}</p>}
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => abrirFichaPdf(f.storage_path, false)}
-                    className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                    title="Ver PDF"
-                  >
-                    <Eye size={18} />
+                  <button onClick={() => abrirFichaPdf(f.storage_path, false)} className="rounded-lg p-1.5 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver PDF">
+                    <Eye className="size-[18px]" />
                   </button>
-                  <button
-                    onClick={() => abrirFichaPdf(f.storage_path, true)}
-                    className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                    title="Descargar PDF"
-                  >
-                    <Download size={18} />
+                  <button onClick={() => abrirFichaPdf(f.storage_path, true)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar PDF">
+                    <Download className="size-[18px]" />
                   </button>
-                  <StatusBadge estado={f.estado} />
+                  <Badge tone={ESTADO_TONE[f.estado]}>{f.estado}</Badge>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </section>

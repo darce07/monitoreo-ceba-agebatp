@@ -1,29 +1,20 @@
-import { Suspense, lazy, useState } from 'react';
-import { useProfile } from './lib/useProfile';
-import Login from './pages/Login';
-import UploadFicha from './pages/UploadFicha';
-import AdminShell, { type AdminTab } from './components/AdminShell';
+import { Suspense, lazy } from "react";
+import { Route, Routes } from "react-router-dom";
+import { useProfile } from "./lib/useProfile";
+import Login from "./pages/Login";
+import UploadFicha from "./pages/UploadFicha";
+import { AdminLayout } from "./components/layout/AdminLayout";
+import { Skeleton } from "./components/ui";
 
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const FichasAdmin = lazy(() => import('./pages/FichasAdmin'));
-const Docentes = lazy(() => import('./pages/Docentes'));
-
-const TAB_TITLES: Record<AdminTab, string> = {
-  resumen: 'Plataforma de Monitoreo Pedagógico',
-  fichas: 'Gestión de Fichas',
-  docentes: 'Directorio de Docentes',
-};
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const FichasAdmin = lazy(() => import("./pages/FichasAdmin"));
+const Docentes = lazy(() => import("./pages/Docentes"));
 
 export default function App() {
   const { session, profile, loading } = useProfile();
-  const [tab, setTab] = useState<AdminTab>('resumen');
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-body-sm text-on-surface-variant bg-background">
-        Cargando...
-      </div>
-    );
+    return <div className="grid min-h-screen place-items-center bg-slate-50 text-sm text-slate-400 dark:bg-slate-950">Cargando...</div>;
   }
 
   if (!session) {
@@ -32,8 +23,8 @@ export default function App() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-background">
-        <p className="text-body-sm text-on-surface-variant text-center max-w-sm">
+      <div className="grid min-h-screen place-items-center bg-slate-50 px-4 dark:bg-slate-950">
+        <p className="max-w-sm text-center text-sm text-slate-500 dark:text-slate-400">
           Tu cuenta aún no está asociada a ninguna CEBA. Contacta al especialista de AGEBATP para que te habilite
           el acceso.
         </p>
@@ -41,15 +32,36 @@ export default function App() {
     );
   }
 
-  if (profile.role === 'admin') {
+  if (profile.role === "admin") {
     return (
-      <AdminShell tab={tab} onTabChange={setTab} title={TAB_TITLES[tab]} profile={profile}>
-        <Suspense fallback={<div className="h-8 w-64 rounded skeleton-loader" />}>
-          {tab === 'resumen' && <Dashboard />}
-          {tab === 'fichas' && <FichasAdmin />}
-          {tab === 'docentes' && <Docentes />}
-        </Suspense>
-      </AdminShell>
+      <Routes>
+        <Route element={<AdminLayout profile={profile} />}>
+          <Route
+            index
+            element={
+              <Suspense fallback={<Skeleton className="h-64" />}>
+                <Dashboard />
+              </Suspense>
+            }
+          />
+          <Route
+            path="fichas"
+            element={
+              <Suspense fallback={<Skeleton className="h-64" />}>
+                <FichasAdmin />
+              </Suspense>
+            }
+          />
+          <Route
+            path="docentes"
+            element={
+              <Suspense fallback={<Skeleton className="h-64" />}>
+                <Docentes />
+              </Suspense>
+            }
+          />
+        </Route>
+      </Routes>
     );
   }
 

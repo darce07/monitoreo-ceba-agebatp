@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
-import { X, Trash2, Pencil, Eye, Download, ChevronLeft, ChevronRight } from 'lucide-react';
-import { supabase, type Ceba, type Docente, type Ficha } from '../lib/supabase';
-import { abrirFichaPdf } from '../lib/storage';
-import StatusBadge from '../components/StatusBadge';
-import ConfirmModal from '../components/ConfirmModal';
+import { useEffect, useMemo, useState } from "react";
+import { X, Trash2, Pencil, Eye, Download, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { supabase, type Ceba, type Docente, type Ficha } from "../lib/supabase";
+import { abrirFichaPdf } from "../lib/storage";
+import { ESTADO_TONE } from "../lib/utils";
+import { Card, Button, Select, Input, Badge, Alert, PageHeader, EmptyState, Skeleton } from "../components/ui";
+import { Field } from "../components/form-field";
+import { ConfirmDialog } from "../components/confirm-dialog";
 
-const AREAS = ['Comunicación', 'Matemática', 'Ciencia y Tecnología', 'Ciencias Sociales', 'Otra'];
-const MESES = Array.from({ length: 12 }, (_, i) => `M${String(i + 1).padStart(2, '0')}`);
-const ESTADOS: Ficha['estado'][] = ['Pendiente', 'Recibido', 'Observado'];
+const AREAS = ["Comunicación", "Matemática", "Ciencia y Tecnología", "Ciencias Sociales", "Otra"];
+const MESES = Array.from({ length: 12 }, (_, i) => `M${String(i + 1).padStart(2, "0")}`);
+const ESTADOS: Ficha["estado"][] = ["Pendiente", "Recibido", "Observado"];
 const PAGE_SIZE = 15;
 
 export default function FichasAdmin() {
@@ -17,26 +19,27 @@ export default function FichasAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [filtroCeba, setFiltroCeba] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState<Ficha['estado'] | ''>('');
-  const [filtroDocente, setFiltroDocente] = useState('');
-  const [filtroMonitoreo, setFiltroMonitoreo] = useState('');
-  const [filtroDesde, setFiltroDesde] = useState('');
-  const [filtroHasta, setFiltroHasta] = useState('');
+  const [filtroCeba, setFiltroCeba] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState<Ficha["estado"] | "">("");
+  const [filtroDocente, setFiltroDocente] = useState("");
+  const [filtroMonitoreo, setFiltroMonitoreo] = useState("");
+  const [filtroDesde, setFiltroDesde] = useState("");
+  const [filtroHasta, setFiltroHasta] = useState("");
   const [page, setPage] = useState(1);
 
   const [panelFicha, setPanelFicha] = useState<Ficha | null>(null);
   const [borrarFicha, setBorrarFicha] = useState<Ficha | null>(null);
+  const [borrando, setBorrando] = useState(false);
 
   async function cargar() {
     setError(null);
     const [fichasRes, cebasRes, docentesRes] = await Promise.all([
-      supabase.from('fichas_monitoreo').select('*').order('created_at', { ascending: false }),
-      supabase.from('cebas').select('*').order('nombre'),
-      supabase.from('docentes').select('*').order('nombre'),
+      supabase.from("fichas_monitoreo").select("*").order("created_at", { ascending: false }),
+      supabase.from("cebas").select("*").order("nombre"),
+      supabase.from("docentes").select("*").order("nombre"),
     ]);
     if (fichasRes.error || cebasRes.error || docentesRes.error) {
-      setError('No se pudo cargar la información. Revisa tu conexión e intenta de nuevo.');
+      setError("No se pudo cargar la información. Revisa tu conexión e intenta de nuevo.");
       setLoading(false);
       return;
     }
@@ -75,10 +78,9 @@ export default function FichasAdmin() {
 
   async function eliminar(ficha: Ficha) {
     setError(null);
-    const { error } = await supabase
-      .from('fichas_monitoreo')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', ficha.id);
+    setBorrando(true);
+    const { error } = await supabase.from("fichas_monitoreo").update({ deleted_at: new Date().toISOString() }).eq("id", ficha.id);
+    setBorrando(false);
     if (error) {
       setError(`Error al eliminar: ${error.message}`);
       return;
@@ -91,209 +93,147 @@ export default function FichasAdmin() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-headline-lg text-on-surface">Gestión de Fichas</h2>
-          <p className="text-body-sm text-on-surface-variant mt-1">
-            {fichasFiltradas.length} de {fichas.length} ficha(s) — administre y revise los registros de monitoreo.
-          </p>
-        </div>
-      </div>
+      <PageHeader title="Gestión de Fichas" description={`${fichasFiltradas.length} de ${fichas.length} ficha(s) — administre y revise los registros de monitoreo.`} />
 
-      {error && <p className="text-body-sm text-error">{error}</p>}
+      {error && <Alert variant="error">{error}</Alert>}
 
-      {/* Filters */}
-      <div className="bg-surface border border-outline-variant rounded-xl p-4 flex flex-col xl:flex-row gap-4 xl:items-center">
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">CEBA</label>
-          <select
-            value={filtroCeba}
-            onChange={(e) => aplicarFiltro(setFiltroCeba, e.target.value)}
-            className="w-full bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 h-9 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-          >
+      <Card className="flex flex-col gap-4 p-4 xl:flex-row xl:items-end">
+        <Field label="CEBA" className="min-w-[200px] flex-1">
+          <Select value={filtroCeba} onChange={(e) => aplicarFiltro(setFiltroCeba, e.target.value)} className="w-full">
             <option value="">Todas las CEBA</option>
             {cebas.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.codigo} · {c.nombre}
               </option>
             ))}
-          </select>
-        </div>
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Docente</label>
-          <select
-            value={filtroDocente}
-            onChange={(e) => aplicarFiltro(setFiltroDocente, e.target.value)}
-            className="w-full bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 h-9 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-          >
+          </Select>
+        </Field>
+        <Field label="Docente" className="min-w-[200px] flex-1">
+          <Select value={filtroDocente} onChange={(e) => aplicarFiltro(setFiltroDocente, e.target.value)} className="w-full">
             <option value="">Todos los docentes</option>
             {docentes.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.nombre}
               </option>
             ))}
-          </select>
-        </div>
-        <div className="flex-1 min-w-[140px]">
-          <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">N° Monitoreo</label>
-          <select
-            value={filtroMonitoreo}
-            onChange={(e) => aplicarFiltro(setFiltroMonitoreo, e.target.value)}
-            className="w-full bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 h-9 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-          >
+          </Select>
+        </Field>
+        <Field label="N° Monitoreo" className="min-w-[140px]">
+          <Select value={filtroMonitoreo} onChange={(e) => aplicarFiltro(setFiltroMonitoreo, e.target.value)} className="w-full">
             <option value="">Todos (suma general)</option>
             {MESES.map((m) => (
               <option key={m} value={m}>
                 {m}
               </option>
             ))}
-          </select>
-        </div>
-        <div className="flex gap-4">
-          <div>
-            <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Desde</label>
-            <input
-              type="date"
-              value={filtroDesde}
-              onChange={(e) => aplicarFiltro(setFiltroDesde, e.target.value)}
-              className="bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 h-9 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Hasta</label>
-            <input
-              type="date"
-              value={filtroHasta}
-              onChange={(e) => aplicarFiltro(setFiltroHasta, e.target.value)}
-              className="bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 h-9 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Estado</label>
+          </Select>
+        </Field>
+        <Field label="Desde">
+          <Input type="date" value={filtroDesde} onChange={(e) => aplicarFiltro(setFiltroDesde, e.target.value)} />
+        </Field>
+        <Field label="Hasta">
+          <Input type="date" value={filtroHasta} onChange={(e) => aplicarFiltro(setFiltroHasta, e.target.value)} />
+        </Field>
+        <Field label="Estado">
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => aplicarFiltro(setFiltroEstado, '')}
-              className={`text-label-sm px-3 py-1.5 h-9 rounded-full flex items-center border transition-colors ${
-                filtroEstado === '' ? 'bg-primary-container text-on-primary-container border-primary/20' : 'bg-surface text-on-surface-variant hover:bg-surface-variant border-outline-variant'
-              }`}
+            <Button
+              size="sm"
+              variant={filtroEstado === "" ? "primary" : "secondary"}
+              type="button"
+              onClick={() => aplicarFiltro(setFiltroEstado, "")}
+              className="rounded-full"
             >
               Todos
-            </button>
+            </Button>
             {ESTADOS.map((e) => (
-              <button
+              <Button
                 key={e}
+                size="sm"
+                variant={filtroEstado === e ? "primary" : "secondary"}
+                type="button"
                 onClick={() => aplicarFiltro(setFiltroEstado, e)}
-                className={`text-label-sm px-3 py-1.5 h-9 rounded-full flex items-center border transition-colors ${
-                  filtroEstado === e ? 'bg-primary-container text-on-primary-container border-primary/20' : 'bg-surface text-on-surface-variant hover:bg-surface-variant border-outline-variant'
-                }`}
+                className="rounded-full"
               >
                 {e}
-              </button>
+              </Button>
             ))}
           </div>
-        </div>
-      </div>
+        </Field>
+      </Card>
 
-      {/* Table */}
-      <div className="bg-surface border border-outline-variant rounded-xl overflow-hidden flex flex-col">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse whitespace-nowrap">
-            <thead>
-              <tr className="bg-surface-container-low border-b border-outline-variant">
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase tracking-wider">CEBA</th>
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase tracking-wider">Docente</th>
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase tracking-wider">Área</th>
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase tracking-wider">Fecha</th>
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase tracking-wider">Monitoreo</th>
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase tracking-wider">PDF</th>
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase tracking-wider">Estado</th>
-                <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/50">
-              {fichasPagina.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-body-sm text-on-surface-variant">
-                    No hay fichas que coincidan con el filtro.
-                  </td>
+      {fichasPagina.length === 0 ? (
+        <EmptyState icon={<FileText className="size-6" />} title="Sin resultados" description="No hay fichas que coincidan con el filtro." />
+      ) : (
+        <Card className="flex flex-col overflow-hidden">
+          <div className="table-scroll">
+            <table className="w-full border-collapse whitespace-nowrap text-left">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/50 text-xs uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-900/50">
+                  <th className="px-4 py-3 font-medium">CEBA</th>
+                  <th className="px-4 py-3 font-medium">Docente</th>
+                  <th className="px-4 py-3 font-medium">Área</th>
+                  <th className="px-4 py-3 font-medium">Fecha</th>
+                  <th className="px-4 py-3 font-medium">Monitoreo</th>
+                  <th className="px-4 py-3 font-medium">PDF</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
+                  <th className="px-4 py-3 text-right font-medium">Acciones</th>
                 </tr>
-              )}
-              {fichasPagina.map((f) => (
-                <tr key={f.id} className="hover:bg-surface-variant/30 transition-colors group">
-                  <td className="px-4 py-3 text-body-sm text-on-surface">{cebaById[f.ceba_id]?.codigo} · {cebaById[f.ceba_id]?.nombre}</td>
-                  <td className="px-4 py-3 text-body-sm text-on-surface">{f.docente}</td>
-                  <td className="px-4 py-3 text-body-sm text-on-surface-variant">{f.area}</td>
-                  <td className="px-4 py-3 text-body-sm text-on-surface-variant">{f.fecha_monitoreo}</td>
-                  <td className="px-4 py-3 text-label-md text-on-surface">{f.n_monitoreo}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => abrirFichaPdf(f.storage_path, false)}
-                        className="p-1 text-primary hover:bg-primary/10 rounded transition-colors"
-                        title="Ver PDF"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      <button
-                        onClick={() => abrirFichaPdf(f.storage_path, true)}
-                        className="p-1 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded transition-colors"
-                        title="Descargar PDF"
-                      >
-                        <Download size={18} />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge estado={f.estado} />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => setPanelFicha(f)}
-                        className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                        title="Editar"
-                      >
-                        <Pencil size={18} />
-                      </button>
-                      <button
-                        onClick={() => setBorrarFicha(f)}
-                        className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-auto border-t border-outline-variant px-4 py-3 flex items-center justify-between bg-surface-container-lowest">
-          <span className="text-body-sm text-on-surface-variant">
-            Mostrando {fichasFiltradas.length === 0 ? 0 : (pageClamped - 1) * PAGE_SIZE + 1}
-            {'–'}
-            {Math.min(pageClamped * PAGE_SIZE, fichasFiltradas.length)} de {fichasFiltradas.length}
-          </span>
-          <div className="flex gap-1">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={pageClamped <= 1}
-              className="p-1 text-on-surface-variant hover:bg-surface-variant rounded disabled:opacity-40"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={pageClamped >= totalPages}
-              className="p-1 text-on-surface-variant hover:bg-surface-variant rounded disabled:opacity-40"
-            >
-              <ChevronRight size={20} />
-            </button>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {fichasPagina.map((f) => (
+                  <tr key={f.id} className="group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-200">
+                      {cebaById[f.ceba_id]?.codigo} · {cebaById[f.ceba_id]?.nombre}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-200">{f.docente}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{f.area}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{f.fecha_monitoreo}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200">{f.n_monitoreo}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1">
+                        <button onClick={() => abrirFichaPdf(f.storage_path, false)} className="rounded p-1 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver PDF">
+                          <Eye className="size-[18px]" />
+                        </button>
+                        <button onClick={() => abrirFichaPdf(f.storage_path, true)} className="rounded p-1 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar PDF">
+                          <Download className="size-[18px]" />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge tone={ESTADO_TONE[f.estado]}>{f.estado}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                        <button onClick={() => setPanelFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar">
+                          <Pencil className="size-[18px]" />
+                        </button>
+                        <button onClick={() => setBorrarFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar">
+                          <Trash2 className="size-[18px]" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </div>
+          <div className="mt-auto flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/50">
+            <span className="text-sm text-slate-500 dark:text-slate-400">
+              Mostrando {fichasFiltradas.length === 0 ? 0 : (pageClamped - 1) * PAGE_SIZE + 1}
+              {"–"}
+              {Math.min(pageClamped * PAGE_SIZE, fichasFiltradas.length)} de {fichasFiltradas.length}
+            </span>
+            <div className="flex gap-1">
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={pageClamped <= 1} className="rounded p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-slate-800">
+                <ChevronLeft className="size-5" />
+              </button>
+              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={pageClamped >= totalPages} className="rounded p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-slate-800">
+                <ChevronRight className="size-5" />
+              </button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {panelFicha && (
         <EditPanel
@@ -307,11 +247,12 @@ export default function FichasAdmin() {
         />
       )}
 
-      <ConfirmModal
+      <ConfirmDialog
         open={!!borrarFicha}
+        onOpenChange={(open) => !open && setBorrarFicha(null)}
         title="¿Eliminar ficha de monitoreo?"
         description={`Se eliminará "${borrarFicha?.nombre_pdf}". Queda registrada en la auditoría, pero dejará de aparecer en los listados.`}
-        onCancel={() => setBorrarFicha(null)}
+        loading={borrando}
         onConfirm={() => borrarFicha && eliminar(borrarFicha)}
       />
     </div>
@@ -329,12 +270,12 @@ function EditPanel({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [docenteId, setDocenteId] = useState(ficha.docente_id ?? '');
+  const [docenteId, setDocenteId] = useState(ficha.docente_id ?? "");
   const [area, setArea] = useState(ficha.area);
   const [fecha, setFecha] = useState(ficha.fecha_monitoreo);
   const [nMonitoreo, setNMonitoreo] = useState(ficha.n_monitoreo);
   const [estado, setEstado] = useState(ficha.estado);
-  const [observaciones, setObservaciones] = useState(ficha.observaciones ?? '');
+  const [observaciones, setObservaciones] = useState(ficha.observaciones ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -343,7 +284,7 @@ function EditPanel({
     setError(null);
     const docenteSel = docentesDeCeba.find((d) => d.id === docenteId);
     const { error } = await supabase
-      .from('fichas_monitoreo')
+      .from("fichas_monitoreo")
       .update({
         docente_id: docenteId || null,
         docente: docenteSel?.nombre ?? ficha.docente,
@@ -353,7 +294,7 @@ function EditPanel({
         estado,
         observaciones,
       })
-      .eq('id', ficha.id);
+      .eq("id", ficha.id);
     setSaving(false);
     if (error) {
       setError(error.message);
@@ -363,132 +304,90 @@ function EditPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-on-background/30 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="h-full w-full sm:w-[400px] bg-surface border-l border-outline-variant shadow-2xl flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="flex h-full w-full flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950 sm:w-[420px]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/50">
           <div>
-            <h3 className="text-headline-sm text-on-surface">Detalle de Ficha</h3>
-            <p className="text-body-sm text-on-surface-variant">{ficha.nombre_pdf}</p>
+            <h3 className="font-bold text-slate-900 dark:text-white">Detalle de Ficha</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{ficha.nombre_pdf}</p>
           </div>
-          <button onClick={onClose} className="p-2 text-on-surface-variant hover:bg-surface-variant rounded-full transition-colors">
-            <X size={20} />
+          <button onClick={onClose} className="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <X className="size-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        <div className="flex-1 space-y-5 overflow-y-auto p-6">
           <div className="flex gap-2">
-            <button
-              onClick={() => abrirFichaPdf(ficha.storage_path, false)}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-outline-variant rounded-lg text-label-md text-on-surface hover:bg-surface-variant transition-colors"
-            >
-              <Eye size={16} /> Ver PDF
-            </button>
-            <button
-              onClick={() => abrirFichaPdf(ficha.storage_path, true)}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-outline-variant rounded-lg text-label-md text-on-surface hover:bg-surface-variant transition-colors"
-            >
-              <Download size={16} /> Descargar
-            </button>
+            <Button variant="secondary" size="sm" className="flex-1" onClick={() => abrirFichaPdf(ficha.storage_path, false)}>
+              <Eye className="size-4" /> Ver PDF
+            </Button>
+            <Button variant="secondary" size="sm" className="flex-1" onClick={() => abrirFichaPdf(ficha.storage_path, true)}>
+              <Download className="size-4" /> Descargar
+            </Button>
           </div>
 
-          <div>
-            <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Docente</label>
-            <select
-              value={docenteId}
-              onChange={(e) => setDocenteId(e.target.value)}
-              className="w-full bg-surface border border-outline-variant text-on-surface text-body-md rounded-lg px-3 py-2.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-            >
+          <Field label="Docente" className="block">
+            <Select value={docenteId} onChange={(e) => setDocenteId(e.target.value)} className="w-full">
               <option value="">Sin docente</option>
               {docentesDeCeba.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.nombre}
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Área</label>
-              <select
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
-                className="w-full bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-              >
+            <Field label="Área" className="block">
+              <Select value={area} onChange={(e) => setArea(e.target.value)} className="w-full">
                 {AREAS.map((a) => (
                   <option key={a}>{a}</option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">N° monitoreo</label>
-              <select
-                value={nMonitoreo}
-                onChange={(e) => setNMonitoreo(e.target.value)}
-                className="w-full bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-              >
+              </Select>
+            </Field>
+            <Field label="N° monitoreo" className="block">
+              <Select value={nMonitoreo} onChange={(e) => setNMonitoreo(e.target.value)} className="w-full">
                 {MESES.map((m) => (
                   <option key={m}>{m}</option>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </Field>
           </div>
 
-          <div>
-            <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Fecha de monitoreo</label>
-            <input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="w-full bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-            />
-          </div>
+          <Field label="Fecha de monitoreo" className="block">
+            <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full" />
+          </Field>
 
-          <div>
-            <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Estado de evaluación</label>
+          <Field label="Estado de evaluación" className="block">
             <div className="flex gap-2">
               {ESTADOS.map((e) => (
-                <button
-                  key={e}
-                  onClick={() => setEstado(e)}
-                  className={`text-label-sm px-3 py-1.5 rounded-full border transition-colors ${
-                    estado === e ? 'bg-primary text-on-primary border-primary' : 'bg-white text-on-surface-variant border-outline-variant'
-                  }`}
-                >
+                <Button key={e} type="button" size="sm" variant={estado === e ? "primary" : "secondary"} className="rounded-full" onClick={() => setEstado(e)}>
                   {e}
-                </button>
+                </Button>
               ))}
             </div>
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Observaciones</label>
+          <Field label="Observaciones" className="block">
             <textarea
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
               placeholder="Escriba aquí las observaciones detectadas durante el monitoreo..."
               rows={5}
-              className="w-full bg-surface border border-outline-variant text-on-surface text-body-sm rounded-lg p-3 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none placeholder-outline"
+              className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             />
-          </div>
+          </Field>
 
-          {error && <p className="text-body-sm text-error">{error}</p>}
+          {error && <Alert variant="error">{error}</Alert>}
         </div>
 
-        <div className="p-6 border-t border-outline-variant bg-surface-container-lowest flex gap-3 justify-end">
-          <button onClick={onClose} className="px-4 py-2 text-label-md text-on-surface hover:bg-surface-variant rounded-lg transition-colors">
+        <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50/50 p-6 dark:border-slate-800 dark:bg-slate-900/50">
+          <Button variant="secondary" onClick={onClose}>
             Cancelar
-          </button>
-          <button
-            onClick={guardar}
-            disabled={saving}
-            className="px-4 py-2 text-label-md bg-primary text-on-primary hover:bg-surface-tint rounded-lg transition-colors shadow-sm disabled:opacity-60"
-          >
-            {saving ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
+          </Button>
+          <Button loading={saving} onClick={guardar}>
+            Guardar Cambios
+          </Button>
         </div>
       </div>
     </div>
@@ -498,9 +397,9 @@ function EditPanel({
 function FichasSkeleton() {
   return (
     <div className="flex flex-col gap-6">
-      <div className="h-8 w-64 rounded skeleton-loader" />
-      <div className="h-24 rounded-xl skeleton-loader" />
-      <div className="h-96 rounded-xl skeleton-loader" />
+      <Skeleton className="h-8 w-64" />
+      <Skeleton className="h-24" />
+      <Skeleton className="h-96" />
     </div>
   );
 }

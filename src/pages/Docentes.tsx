@@ -1,16 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
-import { supabase, type Ceba, type Docente, type Ficha } from '../lib/supabase';
+import { useEffect, useMemo, useState } from "react";
+import { Search, Users } from "lucide-react";
+import { supabase, type Ceba, type Docente, type Ficha } from "../lib/supabase";
+import { Card, Select, Input, Alert, Button, PageHeader, EmptyState, Skeleton } from "../components/ui";
 
 const AVATAR_TONES = [
-  'bg-primary-container text-on-primary-container',
-  'bg-secondary-container text-on-secondary-container',
-  'bg-tertiary-container text-on-tertiary-container',
+  "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300",
+  "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+  "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300",
 ];
 
 function iniciales(nombre: string) {
   const partes = nombre.trim().split(/\s+/);
-  return ((partes[0]?.[0] ?? '') + (partes[1]?.[0] ?? '')).toUpperCase();
+  return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
 }
 
 export default function Docentes() {
@@ -19,18 +20,18 @@ export default function Docentes() {
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filtroCeba, setFiltroCeba] = useState('');
-  const [busqueda, setBusqueda] = useState('');
+  const [filtroCeba, setFiltroCeba] = useState("");
+  const [busqueda, setBusqueda] = useState("");
 
   async function cargar() {
     setError(null);
     const [docentesRes, cebasRes, fichasRes] = await Promise.all([
-      supabase.from('docentes').select('*').order('nombre'),
-      supabase.from('cebas').select('*').order('nombre'),
-      supabase.from('fichas_monitoreo').select('*'),
+      supabase.from("docentes").select("*").order("nombre"),
+      supabase.from("cebas").select("*").order("nombre"),
+      supabase.from("fichas_monitoreo").select("*"),
     ]);
     if (docentesRes.error || cebasRes.error || fichasRes.error) {
-      setError('No se pudo cargar la información. Revisa tu conexión e intenta de nuevo.');
+      setError("No se pudo cargar la información. Revisa tu conexión e intenta de nuevo.");
       setLoading(false);
       return;
     }
@@ -76,98 +77,86 @@ export default function Docentes() {
   );
 
   if (loading) return <DocentesSkeleton />;
+  if (error) {
+    return (
+      <div className="space-y-3">
+        <Alert variant="error">{error}</Alert>
+        <Button onClick={cargar}>Reintentar</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-headline-lg text-on-surface">Directorio de Docentes</h2>
-          <p className="text-body-sm text-on-surface-variant mt-1">
-            {docentesFiltrados.length} docente(s) — se crean automáticamente al subir su primera ficha.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Directorio de Docentes"
+        description={`${docentesFiltrados.length} docente(s) registrado(s) — se crean automáticamente cuando un director sube su primera ficha.`}
+      />
 
-      {error && <p className="text-body-sm text-error">{error}</p>}
-
-      <div className="bg-surface border border-outline-variant rounded-t-lg p-3 flex flex-col sm:flex-row gap-3 items-center justify-between border-b-0">
+      <Card className="flex flex-col items-center justify-between gap-3 p-3 sm:flex-row">
         <div className="relative w-full sm:max-w-xs">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
-          <input
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar docente por nombre..."
-            className="w-full pl-9 pr-3 py-1.5 border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-md text-body-sm h-9 bg-background"
-          />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar docente por nombre..." className="pl-9" />
         </div>
-        <select
-          value={filtroCeba}
-          onChange={(e) => setFiltroCeba(e.target.value)}
-          className="w-full sm:w-56 border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-md text-body-sm h-9 px-3 bg-background"
-        >
+        <Select value={filtroCeba} onChange={(e) => setFiltroCeba(e.target.value)} className="w-full sm:w-56">
           <option value="">Todas las CEBA</option>
           {cebas.map((c) => (
             <option key={c.id} value={c.id}>
               {c.codigo} · {c.nombre}
             </option>
           ))}
-        </select>
-      </div>
+        </Select>
+      </Card>
 
-      <div className="bg-surface border border-outline-variant rounded-b-lg overflow-x-auto shadow-sm -mt-6">
-        <table className="w-full text-left border-collapse whitespace-nowrap">
-          <thead>
-            <tr className="bg-surface-container-low border-b border-outline-variant">
-              <th className="py-3 px-4 text-label-sm text-on-surface-variant uppercase tracking-wider">Docente</th>
-              <th className="py-3 px-4 text-label-sm text-on-surface-variant uppercase tracking-wider">CEBA</th>
-              <th className="py-3 px-4 text-label-sm text-on-surface-variant uppercase tracking-wider text-center">Total Fichas</th>
-              <th className="py-3 px-4 text-label-sm text-on-surface-variant uppercase tracking-wider">Último Monitoreo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {docentesFiltrados.length === 0 && (
-              <tr>
-                <td colSpan={4} className="py-8 px-4 text-center text-body-sm text-on-surface-variant">
-                  No hay docentes registrados todavía.
-                </td>
-              </tr>
-            )}
-            {docentesFiltrados.map((d, i) => {
-              const ultima = ultimaFichaPorDocente.get(d.id);
-              return (
-                <tr key={d.id} className="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
-                  <td className="py-2 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-label-md ${AVATAR_TONES[i % AVATAR_TONES.length]}`}>
-                        {iniciales(d.nombre)}
-                      </div>
-                      <div className="font-medium text-on-surface text-body-md">{d.nombre}</div>
-                    </div>
-                  </td>
-                  <td className="py-2 px-4 text-body-sm text-on-surface-variant">
-                    {cebaById[d.ceba_id]?.codigo} · {cebaById[d.ceba_id]?.nombre}
-                  </td>
-                  <td className="py-2 px-4 text-center text-body-sm font-medium text-on-surface">
-                    {conteoPorDocente.get(d.id) ?? 0}
-                  </td>
-                  <td className="py-2 px-4">
-                    {ultima ? (
-                      <>
-                        <div className="text-body-sm text-on-surface">{ultima.fecha_monitoreo}</div>
-                        <div className={`text-label-sm ${ultima.estado === 'Observado' ? 'text-error' : 'text-secondary'}`}>
-                          Estado: {ultima.estado}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-body-sm text-outline-variant italic">Sin registros</div>
-                    )}
-                  </td>
+      {docentesFiltrados.length === 0 ? (
+        <EmptyState icon={<Users className="size-6" />} title="Sin docentes" description="No hay docentes registrados todavía." />
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="table-scroll">
+            <table className="w-full border-collapse whitespace-nowrap text-left">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/50 text-xs uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-900/50">
+                  <th className="px-4 py-3 font-medium">Docente</th>
+                  <th className="px-4 py-3 font-medium">CEBA</th>
+                  <th className="px-4 py-3 text-center font-medium">Total Fichas</th>
+                  <th className="px-4 py-3 font-medium">Último Monitoreo</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {docentesFiltrados.map((d, i) => {
+                  const ultima = ultimaFichaPorDocente.get(d.id);
+                  return (
+                    <tr key={d.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-3">
+                          <div className={`grid size-8 shrink-0 place-items-center rounded-full text-sm font-bold ${AVATAR_TONES[i % AVATAR_TONES.length]}`}>
+                            {iniciales(d.nombre)}
+                          </div>
+                          <div className="font-medium text-slate-800 dark:text-slate-200">{d.nombre}</div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">
+                        {cebaById[d.ceba_id]?.codigo} · {cebaById[d.ceba_id]?.nombre}
+                      </td>
+                      <td className="px-4 py-2 text-center text-sm font-medium text-slate-800 dark:text-slate-200">{conteoPorDocente.get(d.id) ?? 0}</td>
+                      <td className="px-4 py-2">
+                        {ultima ? (
+                          <>
+                            <div className="text-sm text-slate-800 dark:text-slate-200">{ultima.fecha_monitoreo}</div>
+                            <div className={`text-xs ${ultima.estado === "Observado" ? "text-rose-600" : "text-teal-600"}`}>Estado: {ultima.estado}</div>
+                          </>
+                        ) : (
+                          <div className="text-sm italic text-slate-300 dark:text-slate-600">Sin registros</div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
@@ -175,11 +164,11 @@ export default function Docentes() {
 function DocentesSkeleton() {
   return (
     <div className="flex flex-col gap-6">
-      <div className="h-8 w-64 rounded skeleton-loader" />
-      <div className="h-12 rounded-t-lg skeleton-loader" />
-      <div className="flex flex-col gap-2 -mt-4">
+      <Skeleton className="h-8 w-64" />
+      <Skeleton className="h-12" />
+      <div className="flex flex-col gap-2">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-14 rounded skeleton-loader" />
+          <Skeleton key={i} className="h-14" />
         ))}
       </div>
     </div>
