@@ -1,6 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import type { CSSProperties } from "react";
-import { Button } from "./ui";
+import { Button, Alert } from "./ui";
 
 export function ConfirmDialog({
   open,
@@ -12,6 +12,7 @@ export function ConfirmDialog({
   onConfirm,
   loading,
   variant = "danger",
+  error,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -22,6 +23,7 @@ export function ConfirmDialog({
   onConfirm: () => void;
   loading?: boolean;
   variant?: "danger" | "primary";
+  error?: string | null;
 }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -34,6 +36,11 @@ export function ConfirmDialog({
           >
             <Dialog.Title className="text-lg font-bold">{title}</Dialog.Title>
             <Dialog.Description className="mt-1 text-sm text-slate-500">{description}</Dialog.Description>
+            {error && (
+              <div className="mt-3">
+                <Alert variant="error">{error}</Alert>
+              </div>
+            )}
             <div className="mt-6 flex justify-end gap-3">
               <Dialog.Close asChild>
                 <Button variant="secondary">{cancelLabel}</Button>

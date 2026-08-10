@@ -249,10 +249,11 @@ export default function FichasAdmin() {
 
       <ConfirmDialog
         open={!!borrarFicha}
-        onOpenChange={(open) => !open && setBorrarFicha(null)}
+        onOpenChange={(open) => !open && (setBorrarFicha(null), setError(null))}
         title="¿Eliminar ficha de monitoreo?"
         description={`Se eliminará "${borrarFicha?.nombre_pdf}". Queda registrada en la auditoría, pero dejará de aparecer en los listados.`}
         loading={borrando}
+        error={borrarFicha ? error : null}
         onConfirm={() => borrarFicha && eliminar(borrarFicha)}
       />
     </div>
