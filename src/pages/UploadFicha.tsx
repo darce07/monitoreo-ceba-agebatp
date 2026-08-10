@@ -247,10 +247,10 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
                   {f.estado === "Observado" && f.observaciones && <p className="mt-1 text-xs text-rose-600">Observación: {f.observaciones}</p>}
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => abrirFichaPdf(f.storage_path, false)} className="rounded-lg p-1.5 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver PDF">
+                  <button onClick={async () => setLoadError((await abrirFichaPdf(f.storage_path, false)) ?? null)} className="rounded-lg p-1.5 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver PDF">
                     <Eye className="size-[18px]" />
                   </button>
-                  <button onClick={() => abrirFichaPdf(f.storage_path, true)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar PDF">
+                  <button onClick={async () => setLoadError((await abrirFichaPdf(f.storage_path, true)) ?? null)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar PDF">
                     <Download className="size-[18px]" />
                   </button>
                   <Badge tone={ESTADO_TONE[f.estado]}>{f.estado}</Badge>

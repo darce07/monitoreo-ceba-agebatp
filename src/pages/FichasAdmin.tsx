@@ -191,10 +191,10 @@ export default function FichasAdmin() {
                     <td className="px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200">{f.n_monitoreo}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
-                        <button onClick={() => abrirFichaPdf(f.storage_path, false)} className="rounded p-1 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver PDF">
+                        <button onClick={async () => setError((await abrirFichaPdf(f.storage_path, false)) ?? null)} className="rounded p-1 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver PDF">
                           <Eye className="size-[18px]" />
                         </button>
-                        <button onClick={() => abrirFichaPdf(f.storage_path, true)} className="rounded p-1 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar PDF">
+                        <button onClick={async () => setError((await abrirFichaPdf(f.storage_path, true)) ?? null)} className="rounded p-1 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar PDF">
                           <Download className="size-[18px]" />
                         </button>
                       </div>
@@ -319,10 +319,10 @@ function EditPanel({
 
         <div className="flex-1 space-y-5 overflow-y-auto p-6">
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" className="flex-1" onClick={() => abrirFichaPdf(ficha.storage_path, false)}>
+            <Button variant="secondary" size="sm" className="flex-1" onClick={async () => setError((await abrirFichaPdf(ficha.storage_path, false)) ?? null)}>
               <Eye className="size-4" /> Ver PDF
             </Button>
-            <Button variant="secondary" size="sm" className="flex-1" onClick={() => abrirFichaPdf(ficha.storage_path, true)}>
+            <Button variant="secondary" size="sm" className="flex-1" onClick={async () => setError((await abrirFichaPdf(ficha.storage_path, true)) ?? null)}>
               <Download className="size-4" /> Descargar
             </Button>
           </div>
