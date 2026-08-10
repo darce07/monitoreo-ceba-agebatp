@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Users } from "lucide-react";
+import { Search, Users, Pencil, Trash2 } from "lucide-react";
 import { supabase, type Ceba, type Docente, type Ficha } from "../lib/supabase";
 import { Card, Select, Input, Alert, Button, PageHeader, EmptyState, Skeleton } from "../components/ui";
+import { ConfirmDialog } from "../components/confirm-dialog";
 
 const AVATAR_TONES = [
   "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300",
@@ -22,6 +23,13 @@ export default function Docentes() {
   const [error, setError] = useState<string | null>(null);
   const [filtroCeba, setFiltroCeba] = useState("");
   const [busqueda, setBusqueda] = useState("");
+
+  const [editando, setEditando] = useState<Docente | null>(null);
+  const [nuevoNombre, setNuevoNombre] = useState("");
+  const [guardandoNombre, setGuardandoNombre] = useState(false);
+
+  const [borrarDocente, setBorrarDocente] = useState<Docente | null>(null);
+  const [borrando, setBorrando] = useState(false);
 
   async function cargar() {
     setError(null);
@@ -76,8 +84,41 @@ export default function Docentes() {
     [docentes, filtroCeba, busqueda]
   );
 
+  function abrirEdicion(d: Docente) {
+    setEditando(d);
+    setNuevoNombre(d.nombre);
+  }
+
+  async function guardarNombre() {
+    if (!editando) return;
+    setGuardandoNombre(true);
+    setError(null);
+    const { error } = await supabase.rpc("rename_docente", { p_docente_id: editando.id, p_nuevo_nombre: nuevoNombre });
+    setGuardandoNombre(false);
+    if (error) {
+      setError(`Error al renombrar: ${error.message}`);
+      return;
+    }
+    setEditando(null);
+    cargar();
+  }
+
+  async function confirmarEliminar() {
+    if (!borrarDocente) return;
+    setBorrando(true);
+    const { error } = await supabase.rpc("delete_docente", { p_docente_id: borrarDocente.id });
+    setBorrando(false);
+    if (error) {
+      setError(`Error al eliminar: ${error.message}`);
+      setBorrarDocente(null);
+      return;
+    }
+    setBorrarDocente(null);
+    cargar();
+  }
+
   if (loading) return <DocentesSkeleton />;
-  if (error) {
+  if (error && docentes.length === 0) {
     return (
       <div className="space-y-3">
         <Alert variant="error">{error}</Alert>
@@ -92,6 +133,8 @@ export default function Docentes() {
         title="Directorio de Docentes"
         description={`${docentesFiltrados.length} docente(s) registrado(s) — se crean automáticamente cuando un director sube su primera ficha.`}
       />
+
+      {error && <Alert variant="error">{error}</Alert>}
 
       <Card className="flex flex-col items-center justify-between gap-3 p-3 sm:flex-row">
         <div className="relative w-full sm:max-w-xs">
@@ -120,13 +163,15 @@ export default function Docentes() {
                   <th className="px-4 py-3 font-medium">CEBA</th>
                   <th className="px-4 py-3 text-center font-medium">Total Fichas</th>
                   <th className="px-4 py-3 font-medium">Último Monitoreo</th>
+                  <th className="px-4 py-3 text-right font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {docentesFiltrados.map((d, i) => {
                   const ultima = ultimaFichaPorDocente.get(d.id);
+                  const tieneFichas = (conteoPorDocente.get(d.id) ?? 0) > 0;
                   return (
-                    <tr key={d.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <tr key={d.id} className="group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-3">
                           <div className={`grid size-8 shrink-0 place-items-center rounded-full text-sm font-bold ${AVATAR_TONES[i % AVATAR_TONES.length]}`}>
@@ -149,6 +194,21 @@ export default function Docentes() {
                           <div className="text-sm italic text-slate-300 dark:text-slate-600">Sin registros</div>
                         )}
                       </td>
+                      <td className="px-4 py-2 text-right">
+                        <div className="flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                          <button onClick={() => abrirEdicion(d)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar nombre">
+                            <Pencil className="size-[18px]" />
+                          </button>
+                          <button
+                            onClick={() => setBorrarDocente(d)}
+                            disabled={tieneFichas}
+                            title={tieneFichas ? "No se puede eliminar: ya tiene fichas registradas" : "Eliminar"}
+                            className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent dark:hover:bg-rose-950"
+                          >
+                            <Trash2 className="size-[18px]" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -157,6 +217,33 @@ export default function Docentes() {
           </div>
         </Card>
       )}
+
+      {editando && (
+        <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={() => setEditando(null)}>
+          <Card className="w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-1 text-lg font-bold text-slate-900 dark:text-white">Editar nombre del docente</h3>
+            <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">Actualiza también el nombre en las fichas ya subidas de este docente.</p>
+            <Input value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} autoFocus className="w-full" />
+            <div className="mt-6 flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setEditando(null)}>
+                Cancelar
+              </Button>
+              <Button loading={guardandoNombre} onClick={guardarNombre} disabled={!nuevoNombre.trim()}>
+                Guardar
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={!!borrarDocente}
+        onOpenChange={(open) => !open && setBorrarDocente(null)}
+        title="¿Eliminar docente?"
+        description={`Se eliminará "${borrarDocente?.nombre}" del directorio. Solo es posible porque todavía no tiene fichas registradas.`}
+        loading={borrando}
+        onConfirm={confirmarEliminar}
+      />
     </div>
   );
 }
