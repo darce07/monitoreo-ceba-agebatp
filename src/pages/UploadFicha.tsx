@@ -236,9 +236,9 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
-          className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-teal-300 bg-teal-50/50 p-8 text-center transition hover:border-[var(--brand)] hover:bg-teal-50 dark:border-teal-800 dark:bg-teal-950/20 dark:hover:bg-teal-950/40"
+          className="group flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-teal-300 bg-teal-50/50 p-8 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--brand)] hover:bg-teal-50 hover:shadow-lg dark:border-teal-800 dark:bg-teal-950/20 dark:hover:bg-teal-950/40"
         >
-          <div className="grid size-14 place-items-center rounded-full bg-[var(--brand)] text-white shadow-lg shadow-teal-900/20">
+          <div className="grid size-14 place-items-center rounded-full bg-[var(--brand)] text-white shadow-lg shadow-teal-900/20 transition-transform duration-200 group-hover:scale-105">
             <UploadCloud className="size-7" />
           </div>
           <span className="text-base font-bold text-slate-900 dark:text-white">Registrar nueva ficha de monitoreo</span>
@@ -247,10 +247,10 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
       )}
 
       {showForm && (
-        <Card className="overflow-hidden p-0">
+        <Card className="animate-slide-up overflow-hidden p-0">
           <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/40">
             <h2 className="text-base font-bold text-slate-900 dark:text-white">Nueva ficha de monitoreo</h2>
-            <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
               <X className="size-4" />
             </button>
           </div>
@@ -365,7 +365,7 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
         <div className="flex flex-col gap-3">
           {fichasFiltradas.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{fichas.length === 0 ? "Aún no subiste ninguna ficha." : "Sin resultados para tu búsqueda."}</p>}
           {fichasFiltradas.map((f) => (
-            <Card key={f.id} className="flex flex-col items-start justify-between gap-3 p-4 sm:flex-row sm:items-center">
+            <Card key={f.id} className="flex flex-col items-start justify-between gap-3 p-4 transition-shadow duration-200 hover:shadow-md sm:flex-row sm:items-center">
               <div>
                 <h3 className="font-semibold text-slate-900 dark:text-white">{f.titulo || f.docente}</h3>
                 <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
@@ -385,10 +385,10 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
                 <button onClick={() => verFicha(f.storage_path)} className="rounded-lg p-1.5 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver documento">
                   <Eye className="size-[18px]" />
                 </button>
-                <button onClick={async () => setLoadError((await abrirFichaPdf(f.storage_path, true)) ?? null)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar">
+                <button onClick={async () => setLoadError((await abrirFichaPdf(f.storage_path, true)) ?? null)} className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar">
                   <Download className="size-[18px]" />
                 </button>
-                <button onClick={() => setBorrarFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar">
+                <button onClick={() => setBorrarFicha(f)} className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar">
                   <Trash2 className="size-[18px]" />
                 </button>
                 <Badge tone={ESTADO_TONE[f.estado]}>{f.estado}</Badge>

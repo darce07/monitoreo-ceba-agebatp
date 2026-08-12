@@ -184,7 +184,7 @@ export default function FichasAdmin() {
       </Card>
 
       {mostrarMasFiltros && (
-        <Card className="flex flex-col gap-4 p-4 xl:flex-row xl:flex-wrap xl:items-end">
+        <Card className="animate-slide-up flex flex-col gap-4 p-4 xl:flex-row xl:flex-wrap xl:items-end">
           <Field label="Docente" className="min-w-[200px] flex-1">
             <Select value={filtroDocente} onChange={(e) => aplicarFiltro(setFiltroDocente, e.target.value)} className="w-full">
               <option value="">Todos los docentes</option>
@@ -236,10 +236,10 @@ export default function FichasAdmin() {
                     <td className="px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200">{f.n_monitoreo}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
-                        <button onClick={() => verFicha(f.storage_path)} className="rounded p-1 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver PDF">
+                        <button onClick={() => verFicha(f.storage_path)} className="rounded p-1 text-[var(--brand)] transition-colors hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver PDF">
                           <Eye className="size-[18px]" />
                         </button>
-                        <button onClick={async () => setError((await abrirFichaPdf(f.storage_path, true)) ?? null)} className="rounded p-1 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar PDF">
+                        <button onClick={async () => setError((await abrirFichaPdf(f.storage_path, true)) ?? null)} className="rounded p-1 text-slate-500 transition-colors hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar PDF">
                           <Download className="size-[18px]" />
                         </button>
                       </div>
@@ -250,16 +250,16 @@ export default function FichasAdmin() {
                     <td className="px-4 py-3 text-right">
                       {puedeEditarCampos ? (
                         <div className="flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-                          <button onClick={() => setPanelFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar">
+                          <button onClick={() => setPanelFicha(f)} className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar">
                             <Pencil className="size-[18px]" />
                           </button>
-                          <button onClick={() => setBorrarFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar">
+                          <button onClick={() => setBorrarFicha(f)} className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar">
                             <Trash2 className="size-[18px]" />
                           </button>
                         </div>
                       ) : puedeRevisar ? (
                         <div className="flex justify-end opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-                          <button onClick={() => setPanelFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Revisar">
+                          <button onClick={() => setPanelFicha(f)} className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Revisar">
                             <Pencil className="size-[18px]" />
                           </button>
                         </div>
@@ -278,13 +278,26 @@ export default function FichasAdmin() {
               {"–"}
               {Math.min(pageClamped * PAGE_SIZE, fichasFiltradas.length)} de {fichasFiltradas.length}
             </span>
-            <div className="flex gap-1">
-              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={pageClamped <= 1} className="rounded p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-slate-800">
-                <ChevronLeft className="size-5" />
-              </button>
-              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={pageClamped >= totalPages} className="rounded p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-slate-800">
-                <ChevronRight className="size-5" />
-              </button>
+            <div className="flex items-center gap-2">
+              <span className="hidden text-xs font-medium text-slate-400 sm:inline">
+                Página {pageClamped} de {totalPages}
+              </span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={pageClamped <= 1}
+                  className="grid size-8 place-items-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:bg-white hover:text-slate-800 disabled:pointer-events-none disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-white"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={pageClamped >= totalPages}
+                  className="grid size-8 place-items-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:bg-white hover:text-slate-800 disabled:pointer-events-none disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-white"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
             </div>
           </div>
         </Card>
@@ -382,14 +395,17 @@ function EditPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="flex h-full w-full flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950 sm:w-[420px]" onClick={(e) => e.stopPropagation()}>
+    <div className="animate-fade-in fixed inset-0 z-50 flex justify-end bg-slate-950/50 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="animate-slide-in-right flex h-full w-full flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950 sm:w-[420px]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/50">
-          <div>
+          <div className="min-w-0">
             <h3 className="font-bold text-slate-900 dark:text-white">Detalle de Ficha</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{ficha.nombre_pdf}</p>
+            <p className="truncate text-sm text-slate-500 dark:text-slate-400">{ficha.nombre_pdf}</p>
           </div>
-          <button onClick={onClose} className="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <button onClick={onClose} className="shrink-0 rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
             <X className="size-5" />
           </button>
         </div>

@@ -4,10 +4,10 @@ import { Info } from "lucide-react";
 export function SectionTitle({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
   return (
     <div className="mb-5 flex items-center gap-3">
-      <div className="rounded-xl bg-teal-50 p-2.5 text-teal-700 dark:bg-teal-950">{icon}</div>
+      <div className="rounded-xl bg-teal-50 p-2.5 text-teal-700 dark:bg-teal-950 dark:text-teal-300">{icon}</div>
       <div>
-        <h2 className="font-bold">{title}</h2>
-        <p className="text-xs text-slate-500">{description}</p>
+        <h2 className="font-bold text-slate-900 dark:text-white">{title}</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
       </div>
     </div>
   );

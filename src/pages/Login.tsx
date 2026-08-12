@@ -23,12 +23,19 @@ export default function Login() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-slate-50 p-4 dark:bg-slate-950 sm:p-8">
-      <Card className="w-full max-w-[420px] overflow-hidden">
+    <div
+      className="relative grid min-h-screen place-items-center bg-slate-50 p-4 dark:bg-slate-950 sm:p-8"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 1px 1px, rgba(15,23,42,0.06) 1px, transparent 0)",
+        backgroundSize: "24px 24px",
+      }}
+    >
+      <Card className="animate-scale-in w-full max-w-[420px] overflow-hidden">
         <div className="h-1.5 w-full bg-[var(--brand)]" />
         <div className="p-8 sm:p-10">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 grid size-16 place-items-center rounded-full bg-[var(--brand)] text-lg font-black text-white">
+            <div className="mx-auto mb-4 grid size-16 place-items-center rounded-full bg-[var(--brand)] text-lg font-black text-white shadow-lg shadow-teal-900/20">
               U6
             </div>
             <h1 className="font-serif text-xl font-bold text-slate-950 dark:text-white">Monitoreo CEBA</h1>

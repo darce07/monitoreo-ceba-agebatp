@@ -101,7 +101,7 @@ export default function Monitoreos() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {monitoreos.map((m) => (
-            <Card key={m.id} className="flex items-center justify-between gap-3 p-4">
+            <Card key={m.id} className="flex items-center justify-between gap-3 p-4 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg">
               <div className="min-w-0">
                 <p className="truncate font-semibold text-slate-900 dark:text-white">{m.nombre}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">{m.codigo}</p>
@@ -116,10 +116,10 @@ export default function Monitoreos() {
                 )}
                 {puedeEditar && (
                   <>
-                    <button onClick={() => abrirEditar(m)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar">
+                    <button onClick={() => abrirEditar(m)} className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar">
                       <Pencil className="size-4" />
                     </button>
-                    <button onClick={() => setBorrar(m)} className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar">
+                    <button onClick={() => setBorrar(m)} className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar">
                       <Trash2 className="size-4" />
                     </button>
                   </>
@@ -131,8 +131,8 @@ export default function Monitoreos() {
       )}
 
       {creando && (
-        <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={() => setCreando(false)}>
-          <Card className="w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="animate-fade-in fixed inset-0 z-[100] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={() => setCreando(false)}>
+          <Card className="animate-scale-in w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-4 text-lg font-bold text-slate-900 dark:text-white">{editando ? "Editar monitoreo" : "Nuevo monitoreo"}</h3>
             <div className="space-y-3">
               <Field label="Código corto" hint="Se usa en el nombre del archivo. Ej: M01, 1T2026." className="block">

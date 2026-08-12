@@ -133,15 +133,15 @@ export default function Dashboard() {
           sub={totales.observados > 0 ? "Con observaciones del especialista" : "Ninguna observada"}
           subClass={totales.observados > 0 ? "text-rose-600" : "text-emerald-600"}
         />
-        <Card className="flex flex-col justify-between p-4">
+        <Card className="flex flex-col justify-between p-4 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg">
           <div className="mb-2 flex items-start justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">% Avance</span>
             <PieChart className="size-5 text-teal-400" />
           </div>
           <div>
-            <div className="text-3xl font-bold text-slate-900 dark:text-white">{totales.avance}%</div>
-            <div className="mb-1 mt-2 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800">
-              <div className="h-1.5 rounded-full bg-[var(--brand)]" style={{ width: `${totales.avance}%` }} />
+            <div className="text-3xl font-bold tabular-nums text-slate-900 dark:text-white">{totales.avance}%</div>
+            <div className="mb-1 mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <div className="h-1.5 rounded-full bg-[var(--brand)] transition-[width] duration-500 ease-out" style={{ width: `${totales.avance}%` }} />
             </div>
           </div>
         </Card>
@@ -212,13 +212,13 @@ function KpiCard({
   subClass?: string;
 }) {
   return (
-    <Card className="flex flex-col justify-between p-4">
+    <Card className="flex flex-col justify-between p-4 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg">
       <div className="mb-2 flex items-start justify-between">
         <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</span>
         <Icon className={`size-5 ${iconClass}`} />
       </div>
       <div>
-        <div className="text-3xl font-bold text-slate-900 dark:text-white">{value}</div>
+        <div className="text-3xl font-bold tabular-nums text-slate-900 dark:text-white">{value}</div>
         <div className={`mt-1 text-xs ${subClass ?? "text-slate-500 dark:text-slate-400"}`}>{sub}</div>
       </div>
     </Card>

@@ -209,13 +209,13 @@ export default function Docentes() {
                       <td className="px-4 py-2 text-right">
                         {puedeEditar ? (
                         <div className="flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-                          <button onClick={() => abrirEdicion(d)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar nombre">
+                          <button onClick={() => abrirEdicion(d)} className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar nombre">
                             <Pencil className="size-[18px]" />
                           </button>
                           <button
                             onClick={() => setBorrarDocente(d)}
                             title="Eliminar"
-                            className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950"
+                            className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950"
                           >
                             <Trash2 className="size-[18px]" />
                           </button>
@@ -234,8 +234,8 @@ export default function Docentes() {
       )}
 
       {editando && (
-        <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={() => setEditando(null)}>
-          <Card className="w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="animate-fade-in fixed inset-0 z-[100] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={() => setEditando(null)}>
+          <Card className="animate-scale-in w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-1 text-lg font-bold text-slate-900 dark:text-white">Editar nombre del docente</h3>
             <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">Actualiza también el nombre en las fichas ya subidas de este docente.</p>
             <div className="space-y-3">

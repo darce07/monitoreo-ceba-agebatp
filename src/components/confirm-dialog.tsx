@@ -28,14 +28,14 @@ export function ConfirmDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[100] grid place-items-center overflow-y-auto bg-slate-950/60 p-3 backdrop-blur-sm sm:p-4">
+        <Dialog.Overlay className="animate-fade-in fixed inset-0 z-[100] grid place-items-center overflow-y-auto bg-slate-950/60 p-3 backdrop-blur-sm sm:p-4">
           <Dialog.Content
-            className="modal-panel rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-900 sm:p-6"
+            className="modal-panel animate-scale-in rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-900 sm:p-6"
             style={{ "--modal-width": "28rem" } as CSSProperties}
             onOpenAutoFocus={(event) => event.preventDefault()}
           >
-            <Dialog.Title className="text-lg font-bold">{title}</Dialog.Title>
-            <Dialog.Description className="mt-1 text-sm text-slate-500">{description}</Dialog.Description>
+            <Dialog.Title className="text-lg font-bold text-slate-900 dark:text-white">{title}</Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{description}</Dialog.Description>
             {error && (
               <div className="mt-3">
                 <Alert variant="error">{error}</Alert>

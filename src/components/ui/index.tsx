@@ -16,10 +16,11 @@ export function Button({
   loading?: boolean;
 }) {
   const variants = {
-    primary: "bg-[var(--brand)] text-white shadow-sm hover:brightness-90",
-    secondary: "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200",
+    primary: "bg-[var(--brand)] text-white shadow-sm shadow-teal-900/10 hover:brightness-95 active:brightness-90",
+    secondary:
+      "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800",
     ghost: "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
-    danger: "bg-rose-600 text-white hover:bg-rose-700",
+    danger: "bg-rose-600 text-white shadow-sm shadow-rose-900/10 hover:bg-rose-700",
   };
   const sizes = {
     sm: "min-h-10 px-3 py-2 text-xs sm:min-h-8 sm:py-0",
@@ -29,7 +30,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex max-w-full items-center justify-center gap-2 rounded-xl text-center font-semibold transition focus:outline-none focus:ring-2 focus:ring-teal-500/30 disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex max-w-full items-center justify-center gap-2 rounded-xl text-center font-semibold transition-all duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 dark:focus-visible:ring-offset-slate-950",
         variants[variant],
         sizes[size],
         className,
@@ -47,7 +48,7 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        "min-w-0 rounded-2xl border border-slate-200/80 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition-shadow duration-300 ease-out dark:border-slate-800 dark:bg-slate-900",
+        "min-w-0 rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-10px_rgba(15,23,42,0.10)] transition-shadow duration-300 ease-out dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),0_10px_28px_-10px_rgba(0,0,0,0.4)]",
         className,
       )}
       {...props}
@@ -56,7 +57,12 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
 }
 
 export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("animate-pulse rounded bg-slate-200 dark:bg-slate-800", className)} {...props} />;
+  return (
+    <div
+      className={cn("animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-800/80", className)}
+      {...props}
+    />
+  );
 }
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) {
@@ -64,7 +70,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
     <input
       ref={ref}
       className={cn(
-        "min-h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 sm:min-h-10 sm:py-0",
+        "min-h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition-all duration-150 placeholder:text-slate-400 hover:border-slate-300 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 disabled:bg-slate-50 disabled:text-slate-400 disabled:hover:border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-slate-600 dark:disabled:bg-slate-900 sm:min-h-10 sm:py-0",
         className,
       )}
       {...props}
@@ -76,7 +82,7 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
   return (
     <select
       className={cn(
-        "min-h-11 min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 sm:min-h-10 sm:py-0",
+        "min-h-11 min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-all duration-150 hover:border-slate-300 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 disabled:bg-slate-50 disabled:text-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-slate-600 dark:disabled:bg-slate-900 sm:min-h-10 sm:py-0",
         className,
       )}
       {...props}
@@ -105,7 +111,7 @@ export function Badge({
     slate: "bg-slate-100 text-slate-700 ring-slate-600/10 dark:bg-slate-800 dark:text-slate-300",
   };
   return (
-    <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset", tones[tone], className)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset", tones[tone], className)}>
       {children}
     </span>
   );
@@ -125,7 +131,7 @@ export function Alert({
     warning: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300",
     info: "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300",
   };
-  return <div className={cn("rounded-xl border p-3 text-sm leading-5", variants[variant], className)}>{children}</div>;
+  return <div className={cn("animate-fade-in rounded-xl border p-3 text-sm leading-5", variants[variant], className)}>{children}</div>;
 }
 
 export function PageHeader({
@@ -140,11 +146,11 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 flex-col justify-between gap-4 sm:flex-row sm:items-end">
+    <div className="flex min-w-0 flex-col justify-between gap-4 border-b border-slate-200/70 pb-5 dark:border-slate-800/70 sm:flex-row sm:items-end">
       <div className="min-w-0">
-        {eyebrow && <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-teal-700 dark:text-teal-400">{eyebrow}</p>}
+        {eyebrow && <p className="mb-1.5 text-xs font-bold uppercase tracking-[0.16em] text-teal-700 dark:text-teal-400">{eyebrow}</p>}
         <h1 className="font-serif text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">{title}</h1>
-        <p className="mt-1 max-w-3xl text-sm text-slate-500 dark:text-slate-400">{description}</p>
+        <p className="mt-1.5 max-w-3xl text-sm leading-relaxed text-slate-500 dark:text-slate-400">{description}</p>
       </div>
       {action && <div className="w-full min-w-0 sm:w-auto sm:shrink-0">{action}</div>}
     </div>
@@ -153,10 +159,10 @@ export function PageHeader({
 
 export function EmptyState({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
   return (
-    <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-8 text-center dark:border-slate-700">
-      <div className="mb-3 rounded-2xl bg-slate-100 p-3 text-slate-500 dark:bg-slate-800">{icon}</div>
+    <div className="animate-fade-in flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-8 text-center dark:border-slate-700">
+      <div className="mb-4 rounded-2xl bg-teal-50 p-3.5 text-[var(--brand)] dark:bg-teal-950/50">{icon}</div>
       <h3 className="font-semibold text-slate-900 dark:text-white">{title}</h3>
-      <p className="mt-1 max-w-sm text-sm text-slate-500">{description}</p>
+      <p className="mt-1 max-w-sm text-sm leading-relaxed text-slate-500 dark:text-slate-400">{description}</p>
     </div>
   );
 }

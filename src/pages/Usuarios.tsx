@@ -116,7 +116,7 @@ export default function Usuarios() {
       {ok && <Alert variant="info">{ok}</Alert>}
 
       {mostrarAlta && (
-        <Card className="p-6">
+        <Card className="animate-slide-up p-6">
           <form onSubmit={handleCrear} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Nombre completo" className="block">
@@ -211,8 +211,8 @@ export default function Usuarios() {
       </Card>
 
       {resetUser && (
-        <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={() => setResetUser(null)}>
-          <Card className="w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="animate-fade-in fixed inset-0 z-[100] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={() => setResetUser(null)}>
+          <Card className="animate-scale-in w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-1 text-lg font-bold text-slate-900 dark:text-white">Cambiar contraseña</h3>
             <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{resetUser.email}</p>
             <div className="relative">
@@ -337,10 +337,10 @@ function FilaUsuario({
       <td className="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">{usuario.cebas ? `${usuario.cebas.codigo} · ${usuario.cebas.nombre}` : "—"}</td>
       <td className="px-4 py-2 text-right">
         <div className="flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-          <button onClick={onResetPassword} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Cambiar contraseña">
+          <button onClick={onResetPassword} className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Cambiar contraseña">
             <KeyRound className="size-[18px]" />
           </button>
-          <button onClick={onEliminar} className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar usuario">
+          <button onClick={onEliminar} className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar usuario">
             <Trash2 className="size-[18px]" />
           </button>
         </div>
