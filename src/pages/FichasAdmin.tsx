@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { X, Trash2, Pencil, Eye, Download, ChevronLeft, ChevronRight, FileText, Search } from "lucide-react";
-import { supabase, type Ceba, type Docente, type Ficha, type Profile } from "../lib/supabase";
+import { supabase, type Ceba, type Docente, type Ficha, type Monitoreo, type Profile } from "../lib/supabase";
 import { abrirFichaPdf } from "../lib/storage";
 import { ESTADO_TONE } from "../lib/utils";
 import { Card, Button, Select, Input, Badge, Alert, PageHeader, EmptyState, Skeleton } from "../components/ui";
@@ -9,16 +9,17 @@ import { Field } from "../components/form-field";
 import { ConfirmDialog } from "../components/confirm-dialog";
 
 const AREAS = ["Comunicación", "Matemática", "Ciencia y Tecnología", "Ciencias Sociales", "Otra"];
-const MESES = Array.from({ length: 12 }, (_, i) => `M${String(i + 1).padStart(2, "0")}`);
 const ESTADOS: Ficha["estado"][] = ["Pendiente", "Recibido", "Observado"];
 const PAGE_SIZE = 15;
 
 export default function FichasAdmin() {
   const profile = useOutletContext<Profile>();
-  const puedeEditar = profile.role === "admin";
+  const puedeEditar = profile.role === "admin" || profile.role === "director";
+  const puedeRevisar = profile.role === "admin";
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [docentes, setDocentes] = useState<Docente[]>([]);
+  const [monitoreos, setMonitoreos] = useState<Monitoreo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +28,7 @@ export default function FichasAdmin() {
   const [filtroEstado, setFiltroEstado] = useState<Ficha["estado"] | "">("");
   const [filtroDocente, setFiltroDocente] = useState("");
   const [filtroMonitoreo, setFiltroMonitoreo] = useState("");
+  const [filtroAnio, setFiltroAnio] = useState("");
   const [filtroDesde, setFiltroDesde] = useState("");
   const [filtroHasta, setFiltroHasta] = useState("");
   const [page, setPage] = useState(1);
@@ -37,12 +39,13 @@ export default function FichasAdmin() {
 
   async function cargar() {
     setError(null);
-    const [fichasRes, cebasRes, docentesRes] = await Promise.all([
+    const [fichasRes, cebasRes, docentesRes, monitoreosRes] = await Promise.all([
       supabase.from("fichas_monitoreo").select("*").order("created_at", { ascending: false }),
       supabase.from("cebas").select("*").order("nombre"),
       supabase.from("docentes").select("*").order("nombre"),
+      supabase.from("monitoreos_pedagogicos").select("*").order("orden"),
     ]);
-    if (fichasRes.error || cebasRes.error || docentesRes.error) {
+    if (fichasRes.error || cebasRes.error || docentesRes.error || monitoreosRes.error) {
       setError("No se pudo cargar la información. Revisa tu conexión e intenta de nuevo.");
       setLoading(false);
       return;
@@ -50,6 +53,7 @@ export default function FichasAdmin() {
     setFichas((fichasRes.data as Ficha[]) ?? []);
     setCebas((cebasRes.data as Ceba[]) ?? []);
     setDocentes((docentesRes.data as Docente[]) ?? []);
+    setMonitoreos((monitoreosRes.data as Monitoreo[]) ?? []);
     setLoading(false);
   }
 
@@ -59,19 +63,25 @@ export default function FichasAdmin() {
 
   const cebaById = useMemo(() => Object.fromEntries(cebas.map((c) => [c.id, c])), [cebas]);
 
+  const anios = useMemo(() => {
+    const set = new Set(fichas.map((f) => f.fecha_monitoreo.slice(0, 4)));
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  }, [fichas]);
+
   const fichasFiltradas = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     return fichas.filter((f) => {
       if (filtroCeba && f.ceba_id !== filtroCeba) return false;
       if (filtroEstado && f.estado !== filtroEstado) return false;
       if (filtroDocente && f.docente_id !== filtroDocente) return false;
-      if (filtroMonitoreo && f.n_monitoreo !== filtroMonitoreo) return false;
+      if (filtroMonitoreo && f.monitoreo_id !== filtroMonitoreo) return false;
+      if (filtroAnio && !f.fecha_monitoreo.startsWith(filtroAnio)) return false;
       if (filtroDesde && f.fecha_monitoreo < filtroDesde) return false;
       if (filtroHasta && f.fecha_monitoreo > filtroHasta) return false;
       if (q && !(f.titulo ?? "").toLowerCase().includes(q) && !f.nombre_pdf.toLowerCase().includes(q) && !f.docente.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [fichas, busqueda, filtroCeba, filtroEstado, filtroDocente, filtroMonitoreo, filtroDesde, filtroHasta]);
+  }, [fichas, busqueda, filtroCeba, filtroEstado, filtroDocente, filtroMonitoreo, filtroAnio, filtroDesde, filtroHasta]);
 
   const totalPages = Math.max(1, Math.ceil(fichasFiltradas.length / PAGE_SIZE));
   const pageClamped = Math.min(page, totalPages);
@@ -99,7 +109,7 @@ export default function FichasAdmin() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Gestión de Fichas" description={`${fichasFiltradas.length} de ${fichas.length} ficha(s) — administre y revise los registros de monitoreo.`} />
+      <PageHeader title={profile.role === "director" ? "Mis Fichas" : "Gestión de Fichas"} description={`${fichasFiltradas.length} de ${fichas.length} ficha(s) — administre y revise los registros de monitoreo.`} />
 
       {error && <Alert variant="error">{error}</Alert>}
 
@@ -108,17 +118,19 @@ export default function FichasAdmin() {
         <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por título, nombre de archivo o docente..." className="w-full pl-9" />
       </div>
 
-      <Card className="flex flex-col gap-4 p-4 xl:flex-row xl:items-end">
-        <Field label="CEBA" className="min-w-[200px] flex-1">
-          <Select value={filtroCeba} onChange={(e) => aplicarFiltro(setFiltroCeba, e.target.value)} className="w-full">
-            <option value="">Todas las CEBA</option>
-            {cebas.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.codigo} · {c.nombre}
-              </option>
-            ))}
-          </Select>
-        </Field>
+      <Card className="flex flex-col gap-4 p-4 xl:flex-row xl:flex-wrap xl:items-end">
+        {profile.role !== "director" && (
+          <Field label="CEBA / Director" className="min-w-[200px] flex-1">
+            <Select value={filtroCeba} onChange={(e) => aplicarFiltro(setFiltroCeba, e.target.value)} className="w-full">
+              <option value="">Todas las CEBA</option>
+              {cebas.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.codigo} · {c.nombre}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
         <Field label="Docente" className="min-w-[200px] flex-1">
           <Select value={filtroDocente} onChange={(e) => aplicarFiltro(setFiltroDocente, e.target.value)} className="w-full">
             <option value="">Todos los docentes</option>
@@ -129,12 +141,22 @@ export default function FichasAdmin() {
             ))}
           </Select>
         </Field>
-        <Field label="N° Monitoreo" className="min-w-[140px]">
+        <Field label="Monitoreo" className="min-w-[160px]">
           <Select value={filtroMonitoreo} onChange={(e) => aplicarFiltro(setFiltroMonitoreo, e.target.value)} className="w-full">
-            <option value="">Todos (suma general)</option>
-            {MESES.map((m) => (
-              <option key={m} value={m}>
-                {m}
+            <option value="">Todos</option>
+            {monitoreos.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.nombre}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Año" className="min-w-[110px]">
+          <Select value={filtroAnio} onChange={(e) => aplicarFiltro(setFiltroAnio, e.target.value)} className="w-full">
+            <option value="">Todos</option>
+            {anios.map((a) => (
+              <option key={a} value={a}>
+                {a}
               </option>
             ))}
           </Select>
@@ -147,24 +169,11 @@ export default function FichasAdmin() {
         </Field>
         <Field label="Estado">
           <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant={filtroEstado === "" ? "primary" : "secondary"}
-              type="button"
-              onClick={() => aplicarFiltro(setFiltroEstado, "")}
-              className="rounded-full"
-            >
+            <Button size="sm" variant={filtroEstado === "" ? "primary" : "secondary"} type="button" onClick={() => aplicarFiltro(setFiltroEstado, "")} className="rounded-full">
               Todos
             </Button>
             {ESTADOS.map((e) => (
-              <Button
-                key={e}
-                size="sm"
-                variant={filtroEstado === e ? "primary" : "secondary"}
-                type="button"
-                onClick={() => aplicarFiltro(setFiltroEstado, e)}
-                className="rounded-full"
-              >
+              <Button key={e} size="sm" variant={filtroEstado === e ? "primary" : "secondary"} type="button" onClick={() => aplicarFiltro(setFiltroEstado, e)} className="rounded-full">
                 {e}
               </Button>
             ))}
@@ -180,7 +189,7 @@ export default function FichasAdmin() {
             <table className="w-full border-collapse whitespace-nowrap text-left">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/50 text-xs uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-900/50">
-                  <th className="px-4 py-3 font-medium">CEBA</th>
+                  {profile.role !== "director" && <th className="px-4 py-3 font-medium">CEBA</th>}
                   <th className="px-4 py-3 font-medium">Docente</th>
                   <th className="px-4 py-3 font-medium">Área</th>
                   <th className="px-4 py-3 font-medium">Fecha</th>
@@ -193,9 +202,11 @@ export default function FichasAdmin() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {fichasPagina.map((f) => (
                   <tr key={f.id} className="group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-200">
-                      {cebaById[f.ceba_id]?.codigo} · {cebaById[f.ceba_id]?.nombre}
-                    </td>
+                    {profile.role !== "director" && (
+                      <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-200">
+                        {cebaById[f.ceba_id]?.codigo} · {cebaById[f.ceba_id]?.nombre}
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-200">{f.docente}</td>
                     <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{f.area}</td>
                     <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{f.fecha_monitoreo}</td>
@@ -254,6 +265,8 @@ export default function FichasAdmin() {
         <EditPanel
           ficha={panelFicha}
           docentesDeCeba={docentes.filter((d) => d.ceba_id === panelFicha.ceba_id)}
+          monitoreos={monitoreos}
+          puedeRevisar={puedeRevisar}
           onClose={() => setPanelFicha(null)}
           onSaved={() => {
             setPanelFicha(null);
@@ -278,18 +291,23 @@ export default function FichasAdmin() {
 function EditPanel({
   ficha,
   docentesDeCeba,
+  monitoreos,
+  puedeRevisar,
   onClose,
   onSaved,
 }: {
   ficha: Ficha;
   docentesDeCeba: Docente[];
+  monitoreos: Monitoreo[];
+  puedeRevisar: boolean;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const [docenteId, setDocenteId] = useState(ficha.docente_id ?? "");
   const [area, setArea] = useState(ficha.area);
   const [fecha, setFecha] = useState(ficha.fecha_monitoreo);
-  const [nMonitoreo, setNMonitoreo] = useState(ficha.n_monitoreo);
+  const [monitoreoId, setMonitoreoId] = useState(ficha.monitoreo_id ?? "");
+  const [titulo, setTitulo] = useState(ficha.titulo ?? "");
   const [estado, setEstado] = useState(ficha.estado);
   const [observaciones, setObservaciones] = useState(ficha.observaciones ?? "");
   const [saving, setSaving] = useState(false);
@@ -299,18 +317,34 @@ function EditPanel({
     setSaving(true);
     setError(null);
     const docenteSel = docentesDeCeba.find((d) => d.id === docenteId);
-    const { error } = await supabase
-      .from("fichas_monitoreo")
-      .update({
-        docente_id: docenteId || null,
-        docente: docenteSel?.nombre ?? ficha.docente,
-        area,
-        fecha_monitoreo: fecha,
-        n_monitoreo: nMonitoreo,
-        estado,
-        observaciones,
-      })
-      .eq("id", ficha.id);
+    const monitoreoSel = monitoreos.find((m) => m.id === monitoreoId);
+
+    const { error } = puedeRevisar
+      ? await supabase
+          .from("fichas_monitoreo")
+          .update({
+            docente_id: docenteId || null,
+            docente: docenteSel?.nombre ?? ficha.docente,
+            area,
+            fecha_monitoreo: fecha,
+            monitoreo_id: monitoreoId || null,
+            n_monitoreo: monitoreoSel?.codigo ?? ficha.n_monitoreo,
+            titulo: titulo || null,
+            estado,
+            observaciones,
+          })
+          .eq("id", ficha.id)
+      : await supabase.rpc("director_update_ficha", {
+          p_ficha_id: ficha.id,
+          p_docente_id: docenteId || null,
+          p_docente: docenteSel?.nombre ?? ficha.docente,
+          p_area: area,
+          p_fecha_monitoreo: fecha,
+          p_monitoreo_id: monitoreoId || null,
+          p_n_monitoreo: monitoreoSel?.codigo ?? ficha.n_monitoreo,
+          p_titulo: titulo || null,
+        });
+
     setSaving(false);
     if (error) {
       setError(error.message);
@@ -342,6 +376,10 @@ function EditPanel({
             </Button>
           </div>
 
+          <Field label="Título" className="block">
+            <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} className="w-full" />
+          </Field>
+
           <Field label="Docente" className="block">
             <Select value={docenteId} onChange={(e) => setDocenteId(e.target.value)} className="w-full">
               <option value="">Sin docente</option>
@@ -361,10 +399,13 @@ function EditPanel({
                 ))}
               </Select>
             </Field>
-            <Field label="N° monitoreo" className="block">
-              <Select value={nMonitoreo} onChange={(e) => setNMonitoreo(e.target.value)} className="w-full">
-                {MESES.map((m) => (
-                  <option key={m}>{m}</option>
+            <Field label="Monitoreo" className="block">
+              <Select value={monitoreoId} onChange={(e) => setMonitoreoId(e.target.value)} className="w-full">
+                <option value="">—</option>
+                {monitoreos.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nombre}
+                  </option>
                 ))}
               </Select>
             </Field>
@@ -374,25 +415,33 @@ function EditPanel({
             <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full" />
           </Field>
 
-          <Field label="Estado de evaluación" className="block">
-            <div className="flex gap-2">
-              {ESTADOS.map((e) => (
-                <Button key={e} type="button" size="sm" variant={estado === e ? "primary" : "secondary"} className="rounded-full" onClick={() => setEstado(e)}>
-                  {e}
-                </Button>
-              ))}
-            </div>
-          </Field>
+          {puedeRevisar && (
+            <>
+              <Field label="Estado de evaluación" className="block">
+                <div className="flex gap-2">
+                  {ESTADOS.map((e) => (
+                    <Button key={e} type="button" size="sm" variant={estado === e ? "primary" : "secondary"} className="rounded-full" onClick={() => setEstado(e)}>
+                      {e}
+                    </Button>
+                  ))}
+                </div>
+              </Field>
 
-          <Field label="Observaciones" className="block">
-            <textarea
-              value={observaciones}
-              onChange={(e) => setObservaciones(e.target.value)}
-              placeholder="Escriba aquí las observaciones detectadas durante el monitoreo..."
-              rows={5}
-              className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-            />
-          </Field>
+              <Field label="Observaciones" className="block">
+                <textarea
+                  value={observaciones}
+                  onChange={(e) => setObservaciones(e.target.value)}
+                  placeholder="Escriba aquí las observaciones detectadas durante el monitoreo..."
+                  rows={5}
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                />
+              </Field>
+            </>
+          )}
+
+          {!puedeRevisar && (
+            <Alert variant="info">El estado y las observaciones las define el especialista AGEBATP al revisar tu ficha.</Alert>
+          )}
 
           {error && <Alert variant="error">{error}</Alert>}
         </div>

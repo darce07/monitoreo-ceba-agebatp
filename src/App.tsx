@@ -10,6 +10,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const FichasAdmin = lazy(() => import("./pages/FichasAdmin"));
 const Docentes = lazy(() => import("./pages/Docentes"));
 const Usuarios = lazy(() => import("./pages/Usuarios"));
+const Monitoreos = lazy(() => import("./pages/Monitoreos"));
 
 export default function App() {
   const { session, profile, loading } = useProfile();
@@ -33,26 +34,34 @@ export default function App() {
     );
   }
 
-  if (profile.role === "admin" || profile.role === "especialista") {
-    return (
-      <Routes>
-        <Route element={<AdminLayout profile={profile} />}>
-          <Route
-            index
-            element={
+  const esDirector = profile.role === "director";
+  const esAdmin = profile.role === "admin";
+  const puedeVerDocentesYMonitoreos = !esDirector;
+
+  return (
+    <Routes>
+      <Route element={<AdminLayout profile={profile} />}>
+        <Route
+          index
+          element={
+            esDirector ? (
+              <UploadFicha profile={profile} />
+            ) : (
               <Suspense fallback={<Skeleton className="h-64" />}>
                 <Dashboard />
               </Suspense>
-            }
-          />
-          <Route
-            path="fichas"
-            element={
-              <Suspense fallback={<Skeleton className="h-64" />}>
-                <FichasAdmin />
-              </Suspense>
-            }
-          />
+            )
+          }
+        />
+        <Route
+          path="fichas"
+          element={
+            <Suspense fallback={<Skeleton className="h-64" />}>
+              <FichasAdmin />
+            </Suspense>
+          }
+        />
+        {puedeVerDocentesYMonitoreos && (
           <Route
             path="docentes"
             element={
@@ -61,6 +70,18 @@ export default function App() {
               </Suspense>
             }
           />
+        )}
+        {puedeVerDocentesYMonitoreos && (
+          <Route
+            path="monitoreos"
+            element={
+              <Suspense fallback={<Skeleton className="h-64" />}>
+                <Monitoreos />
+              </Suspense>
+            }
+          />
+        )}
+        {esAdmin && (
           <Route
             path="usuarios"
             element={
@@ -69,15 +90,7 @@ export default function App() {
               </Suspense>
             }
           />
-        </Route>
-      </Routes>
-    );
-  }
-
-  return (
-    <Routes>
-      <Route element={<AdminLayout profile={profile} />}>
-        <Route index element={<UploadFicha profile={profile} />} />
+        )}
       </Route>
     </Routes>
   );

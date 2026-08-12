@@ -20,9 +20,19 @@ export type Ceba = {
   correo_institucional: string | null;
 };
 
+export type Monitoreo = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  orden: number;
+  activo: boolean;
+  created_at: string;
+};
+
 export type Ficha = {
   id: string;
   ceba_id: string;
+  monitoreo_id: string | null;
   director_id: string | null;
   docente: string;
   docente_id: string | null;
