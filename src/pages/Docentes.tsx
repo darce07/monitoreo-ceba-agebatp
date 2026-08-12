@@ -19,7 +19,7 @@ function iniciales(nombre: string) {
 
 export default function Docentes() {
   const profile = useOutletContext<Profile>();
-  const puedeEditar = profile.role === "admin" || profile.role === "director";
+  const puedeEditar = profile.role === "director";
   const [docentes, setDocentes] = useState<Docente[]>([]);
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);

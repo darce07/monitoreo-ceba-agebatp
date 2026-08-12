@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
-import { X, Trash2, Pencil, Eye, Download, ChevronLeft, ChevronRight, FileText, Search } from "lucide-react";
+import { useOutletContext, useSearchParams } from "react-router-dom";
+import { X, Trash2, Pencil, Eye, Download, ChevronLeft, ChevronRight, FileText, Search, SlidersHorizontal } from "lucide-react";
 import { supabase, type Ceba, type Docente, type Ficha, type Monitoreo, type Profile } from "../lib/supabase";
 import { abrirFichaPdf, obtenerUrlVistaPrevia } from "../lib/storage";
 import { PreviewModal } from "../components/preview-modal";
@@ -15,8 +15,8 @@ const PAGE_SIZE = 15;
 
 export default function FichasAdmin() {
   const profile = useOutletContext<Profile>();
-  const puedeEditar = profile.role === "admin" || profile.role === "director";
-  const puedeRevisar = profile.role === "admin";
+  const puedeEditarCampos = profile.role === "director";
+  const puedeRevisar = profile.role === "especialista";
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [docentes, setDocentes] = useState<Docente[]>([]);
@@ -24,14 +24,16 @@ export default function FichasAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [searchParams] = useSearchParams();
   const [busqueda, setBusqueda] = useState("");
-  const [filtroCeba, setFiltroCeba] = useState("");
+  const [filtroCeba, setFiltroCeba] = useState(searchParams.get("ceba") ?? "");
   const [filtroEstado, setFiltroEstado] = useState<Ficha["estado"] | "">("");
   const [filtroDocente, setFiltroDocente] = useState("");
   const [filtroMonitoreo, setFiltroMonitoreo] = useState("");
   const [filtroAnio, setFiltroAnio] = useState("");
   const [filtroDesde, setFiltroDesde] = useState("");
   const [filtroHasta, setFiltroHasta] = useState("");
+  const [mostrarMasFiltros, setMostrarMasFiltros] = useState(false);
   const [page, setPage] = useState(1);
 
   const [panelFicha, setPanelFicha] = useState<Ficha | null>(null);
@@ -142,16 +144,6 @@ export default function FichasAdmin() {
             </Select>
           </Field>
         )}
-        <Field label="Docente" className="min-w-[200px] flex-1">
-          <Select value={filtroDocente} onChange={(e) => aplicarFiltro(setFiltroDocente, e.target.value)} className="w-full">
-            <option value="">Todos los docentes</option>
-            {docentes.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.nombre}
-              </option>
-            ))}
-          </Select>
-        </Field>
         <Field label="Monitoreo" className="min-w-[160px]">
           <Select value={filtroMonitoreo} onChange={(e) => aplicarFiltro(setFiltroMonitoreo, e.target.value)} className="w-full">
             <option value="">Todos</option>
@@ -172,12 +164,6 @@ export default function FichasAdmin() {
             ))}
           </Select>
         </Field>
-        <Field label="Desde">
-          <Input type="date" value={filtroDesde} onChange={(e) => aplicarFiltro(setFiltroDesde, e.target.value)} />
-        </Field>
-        <Field label="Hasta">
-          <Input type="date" value={filtroHasta} onChange={(e) => aplicarFiltro(setFiltroHasta, e.target.value)} />
-        </Field>
         <Field label="Estado">
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant={filtroEstado === "" ? "primary" : "secondary"} type="button" onClick={() => aplicarFiltro(setFiltroEstado, "")} className="rounded-full">
@@ -190,7 +176,33 @@ export default function FichasAdmin() {
             ))}
           </div>
         </Field>
+        <Button size="sm" variant="secondary" type="button" onClick={() => setMostrarMasFiltros((v) => !v)} className="gap-1.5">
+          <SlidersHorizontal className="size-3.5" />
+          Más filtros
+          {(filtroDocente || filtroDesde || filtroHasta) && <span className="ml-1 size-1.5 rounded-full bg-emerald-500" />}
+        </Button>
       </Card>
+
+      {mostrarMasFiltros && (
+        <Card className="flex flex-col gap-4 p-4 xl:flex-row xl:flex-wrap xl:items-end">
+          <Field label="Docente" className="min-w-[200px] flex-1">
+            <Select value={filtroDocente} onChange={(e) => aplicarFiltro(setFiltroDocente, e.target.value)} className="w-full">
+              <option value="">Todos los docentes</option>
+              {docentes.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.nombre}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Desde">
+            <Input type="date" value={filtroDesde} onChange={(e) => aplicarFiltro(setFiltroDesde, e.target.value)} />
+          </Field>
+          <Field label="Hasta">
+            <Input type="date" value={filtroHasta} onChange={(e) => aplicarFiltro(setFiltroHasta, e.target.value)} />
+          </Field>
+        </Card>
+      )}
 
       {fichasPagina.length === 0 ? (
         <EmptyState icon={<FileText className="size-6" />} title="Sin resultados" description="No hay fichas que coincidan con el filtro." />
@@ -236,13 +248,19 @@ export default function FichasAdmin() {
                       <Badge tone={ESTADO_TONE[f.estado]}>{f.estado}</Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {puedeEditar ? (
+                      {puedeEditarCampos ? (
                         <div className="flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
                           <button onClick={() => setPanelFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar">
                             <Pencil className="size-[18px]" />
                           </button>
                           <button onClick={() => setBorrarFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar">
                             <Trash2 className="size-[18px]" />
+                          </button>
+                        </div>
+                      ) : puedeRevisar ? (
+                        <div className="flex justify-end opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                          <button onClick={() => setPanelFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Revisar">
+                            <Pencil className="size-[18px]" />
                           </button>
                         </div>
                       ) : (
@@ -277,6 +295,7 @@ export default function FichasAdmin() {
           ficha={panelFicha}
           docentesDeCeba={docentes.filter((d) => d.ceba_id === panelFicha.ceba_id)}
           monitoreos={monitoreos}
+          puedeEditarCampos={puedeEditarCampos}
           puedeRevisar={puedeRevisar}
           onVer={() => verFicha(panelFicha.storage_path)}
           onClose={() => setPanelFicha(null)}
@@ -306,6 +325,7 @@ function EditPanel({
   ficha,
   docentesDeCeba,
   monitoreos,
+  puedeEditarCampos,
   puedeRevisar,
   onVer,
   onClose,
@@ -314,6 +334,7 @@ function EditPanel({
   ficha: Ficha;
   docentesDeCeba: Docente[];
   monitoreos: Monitoreo[];
+  puedeEditarCampos: boolean;
   puedeRevisar: boolean;
   onVer: () => void;
   onClose: () => void;
@@ -335,22 +356,8 @@ function EditPanel({
     const docenteSel = docentesDeCeba.find((d) => d.id === docenteId);
     const monitoreoSel = monitoreos.find((m) => m.id === monitoreoId);
 
-    const { error } = puedeRevisar
-      ? await supabase
-          .from("fichas_monitoreo")
-          .update({
-            docente_id: docenteId || null,
-            docente: docenteSel?.nombre ?? ficha.docente,
-            area,
-            fecha_monitoreo: fecha,
-            monitoreo_id: monitoreoId || null,
-            n_monitoreo: monitoreoSel?.codigo ?? ficha.n_monitoreo,
-            titulo: titulo || null,
-            estado,
-            observaciones,
-          })
-          .eq("id", ficha.id)
-      : await supabase.rpc("director_update_ficha", {
+    const { error } = puedeEditarCampos
+      ? await supabase.rpc("director_update_ficha", {
           p_ficha_id: ficha.id,
           p_docente_id: docenteId || null,
           p_docente: docenteSel?.nombre ?? ficha.docente,
@@ -359,6 +366,11 @@ function EditPanel({
           p_monitoreo_id: monitoreoId || null,
           p_n_monitoreo: monitoreoSel?.codigo ?? ficha.n_monitoreo,
           p_titulo: titulo || null,
+        })
+      : await supabase.rpc("revisar_ficha", {
+          p_ficha_id: ficha.id,
+          p_estado: estado,
+          p_observaciones: observaciones || null,
         });
 
     setSaving(false);
@@ -393,11 +405,11 @@ function EditPanel({
           </div>
 
           <Field label="Título" className="block">
-            <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} className="w-full" />
+            <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} disabled={!puedeEditarCampos} className="w-full disabled:opacity-60" />
           </Field>
 
           <Field label="Docente" className="block">
-            <Select value={docenteId} onChange={(e) => setDocenteId(e.target.value)} className="w-full">
+            <Select value={docenteId} onChange={(e) => setDocenteId(e.target.value)} disabled={!puedeEditarCampos} className="w-full disabled:opacity-60">
               <option value="">Sin docente</option>
               {docentesDeCeba.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -409,14 +421,14 @@ function EditPanel({
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Área" className="block">
-              <Select value={area} onChange={(e) => setArea(e.target.value)} className="w-full">
+              <Select value={area} onChange={(e) => setArea(e.target.value)} disabled={!puedeEditarCampos} className="w-full disabled:opacity-60">
                 {AREAS.map((a) => (
                   <option key={a}>{a}</option>
                 ))}
               </Select>
             </Field>
             <Field label="Monitoreo" className="block">
-              <Select value={monitoreoId} onChange={(e) => setMonitoreoId(e.target.value)} className="w-full">
+              <Select value={monitoreoId} onChange={(e) => setMonitoreoId(e.target.value)} disabled={!puedeEditarCampos} className="w-full disabled:opacity-60">
                 <option value="">—</option>
                 {monitoreos.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -428,7 +440,7 @@ function EditPanel({
           </div>
 
           <Field label="Fecha de monitoreo" className="block">
-            <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full" />
+            <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} disabled={!puedeEditarCampos} className="w-full disabled:opacity-60" />
           </Field>
 
           {puedeRevisar && (

@@ -8,6 +8,7 @@ import { ConfirmDialog } from "../components/confirm-dialog";
 
 export default function Monitoreos() {
   const profile = useOutletContext<Profile>();
+  const puedeEditar = profile.role === "especialista";
   const [monitoreos, setMonitoreos] = useState<Monitoreo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +87,7 @@ export default function Monitoreos() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <PageHeader title="Monitoreos Pedagógicos" description="Definí el cronograma de monitoreos que los directores eligen al subir una ficha." />
-        {profile.role !== "director" && (
+        {puedeEditar && (
           <Button onClick={abrirNuevo}>
             <Plus className="size-4" /> Nuevo monitoreo
           </Button>
@@ -106,15 +107,23 @@ export default function Monitoreos() {
                 <p className="text-xs text-slate-500 dark:text-slate-400">{m.codigo}</p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <button onClick={() => alternarActivo(m)}>
+                {puedeEditar ? (
+                  <button onClick={() => alternarActivo(m)}>
+                    <Badge tone={m.activo ? "green" : "slate"}>{m.activo ? "Activo" : "Inactivo"}</Badge>
+                  </button>
+                ) : (
                   <Badge tone={m.activo ? "green" : "slate"}>{m.activo ? "Activo" : "Inactivo"}</Badge>
-                </button>
-                <button onClick={() => abrirEditar(m)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar">
-                  <Pencil className="size-4" />
-                </button>
-                <button onClick={() => setBorrar(m)} className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar">
-                  <Trash2 className="size-4" />
-                </button>
+                )}
+                {puedeEditar && (
+                  <>
+                    <button onClick={() => abrirEditar(m)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar">
+                      <Pencil className="size-4" />
+                    </button>
+                    <button onClick={() => setBorrar(m)} className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar">
+                      <Trash2 className="size-4" />
+                    </button>
+                  </>
+                )}
               </div>
             </Card>
           ))}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { Building2, CheckCircle2, Hourglass, AlertOctagon, PieChart } from "lucide-react";
-import { supabase, type Ceba, type Ficha } from "../lib/supabase";
+import { Building2, CheckCircle2, Hourglass, AlertOctagon, PieChart, X } from "lucide-react";
+import { supabase, type Ceba, type Ficha, type Monitoreo } from "../lib/supabase";
 import { Card, Select, Skeleton, Alert, Button, PageHeader } from "../components/ui";
 
 const MESES = Array.from({ length: 12 }, (_, i) => `M${String(i + 1).padStart(2, "0")}`);
@@ -9,23 +9,27 @@ const MESES = Array.from({ length: 12 }, (_, i) => `M${String(i + 1).padStart(2,
 export default function Dashboard() {
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);
+  const [monitoreos, setMonitoreos] = useState<Monitoreo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filtroMonitoreo, setFiltroMonitoreo] = useState("");
+  const [cebaSeleccionada, setCebaSeleccionada] = useState<string | null>(null);
 
   async function cargar() {
     setError(null);
-    const [cebasRes, fichasRes] = await Promise.all([
+    const [cebasRes, fichasRes, monitoreosRes] = await Promise.all([
       supabase.from("cebas").select("*").order("nombre"),
       supabase.from("fichas_monitoreo").select("*").order("created_at", { ascending: false }),
+      supabase.from("monitoreos_pedagogicos").select("*").order("orden"),
     ]);
-    if (cebasRes.error || fichasRes.error) {
+    if (cebasRes.error || fichasRes.error || monitoreosRes.error) {
       setError("No se pudo cargar la información. Revisa tu conexión e intenta de nuevo.");
       setLoading(false);
       return;
     }
     setCebas((cebasRes.data as Ceba[]) ?? []);
     setFichas((fichasRes.data as Ficha[]) ?? []);
+    setMonitoreos((monitoreosRes.data as Monitoreo[]) ?? []);
     setLoading(false);
   }
 
@@ -51,16 +55,30 @@ export default function Dashboard() {
     });
   }, [cebas, fichasAlcance]);
 
+  const cebaActiva = useMemo(() => cebas.find((c) => c.id === cebaSeleccionada) ?? null, [cebas, cebaSeleccionada]);
+
+  const fichasEnfoque = useMemo(
+    () => (cebaSeleccionada ? fichasAlcance.filter((f) => f.ceba_id === cebaSeleccionada) : fichasAlcance),
+    [fichasAlcance, cebaSeleccionada]
+  );
+
   const totales = useMemo(() => {
-    const recibidos = fichasAlcance.filter((f) => f.estado === "Recibido" || f.estado === "Observado").length;
-    const observados = fichasAlcance.filter((f) => f.estado === "Observado").length;
+    const recibidos = fichasEnfoque.filter((f) => f.estado === "Recibido" || f.estado === "Observado").length;
+    const observados = fichasEnfoque.filter((f) => f.estado === "Observado").length;
     const cebasSinFicha = porCeba.filter((c) => c.total === 0).length;
     const cebasConAlMenosUna = porCeba.filter((c) => c.total > 0).length;
     const avance = cebas.length ? Math.round((cebasConAlMenosUna / cebas.length) * 100) : 0;
     return { recibidos, observados, cebasSinFicha, avance };
-  }, [fichasAlcance, porCeba, cebas.length]);
+  }, [fichasEnfoque, porCeba, cebas.length]);
 
-  const chartData = porCeba.map((c) => ({ nombre: c.ceba.codigo, fichas: c.total })).sort((a, b) => b.fichas - a.fichas);
+  const chartData = useMemo(() => {
+    if (cebaActiva) {
+      return monitoreos
+        .map((m) => ({ nombre: m.codigo, fichas: fichasEnfoque.filter((f) => f.monitoreo_id === m.id).length }))
+        .filter((d) => d.fichas > 0 || monitoreos.length <= 15);
+    }
+    return porCeba.map((c) => ({ nombre: c.ceba.codigo, fichas: c.total })).sort((a, b) => b.fichas - a.fichas);
+  }, [cebaActiva, monitoreos, fichasEnfoque, porCeba]);
 
   if (loading) return <DashboardSkeleton />;
   if (error) {
@@ -76,16 +94,24 @@ export default function Dashboard() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Dashboard de Monitoreo"
-        description={`${filtroMonitoreo ? `Solo ${filtroMonitoreo}` : "Suma general de todos los monitoreos"} — AGEBATP, UGEL 06`}
+        description={`${filtroMonitoreo ? `Solo ${filtroMonitoreo}` : "Suma general de todos los monitoreos"}${cebaActiva ? ` — filtrado a ${cebaActiva.codigo} · ${cebaActiva.nombre}` : ""} — AGEBATP, UGEL 06`}
         action={
-          <Select value={filtroMonitoreo} onChange={(e) => setFiltroMonitoreo(e.target.value)} className="w-full sm:w-auto">
-            <option value="">Todos los monitoreos (general)</option>
-            {MESES.map((m) => (
-              <option key={m} value={m}>
-                Solo {m}
-              </option>
-            ))}
-          </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            {cebaActiva && (
+              <Button size="sm" variant="secondary" type="button" onClick={() => setCebaSeleccionada(null)} className="gap-1.5">
+                <X className="size-3.5" />
+                Quitar filtro de CEBA
+              </Button>
+            )}
+            <Select value={filtroMonitoreo} onChange={(e) => setFiltroMonitoreo(e.target.value)} className="w-full sm:w-auto">
+              <option value="">Todos los monitoreos (general)</option>
+              {MESES.map((m) => (
+                <option key={m} value={m}>
+                  Solo {m}
+                </option>
+              ))}
+            </Select>
+          </div>
         }
       />
 
@@ -123,7 +149,9 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="flex flex-col p-5 xl:col-span-2">
-          <h3 className="mb-4 font-bold text-slate-900 dark:text-white">Fichas subidas por CEBA</h3>
+          <h3 className="mb-4 font-bold text-slate-900 dark:text-white">
+            {cebaActiva ? `Fichas de ${cebaActiva.codigo} por monitoreo` : "Fichas subidas por CEBA"}
+          </h3>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
@@ -150,7 +178,14 @@ export default function Dashboard() {
               </thead>
               <tbody className="text-sm">
                 {porCeba.map(({ ceba, total, estado }) => (
-                  <EstadoRow key={ceba.id} nombre={ceba.nombre} total={total} estado={estado} />
+                  <EstadoRow
+                    key={ceba.id}
+                    nombre={ceba.nombre}
+                    total={total}
+                    estado={estado}
+                    seleccionada={cebaSeleccionada === ceba.id}
+                    onClick={() => setCebaSeleccionada((actual) => (actual === ceba.id ? null : ceba.id))}
+                  />
                 ))}
               </tbody>
             </table>
@@ -202,10 +237,32 @@ const ESTADO_LABEL: Record<string, string> = {
   Observado: "Observado",
 };
 
-function EstadoRow({ nombre, total, estado }: { nombre: string; total: number; estado: string }) {
+function EstadoRow({
+  nombre,
+  total,
+  estado,
+  seleccionada,
+  onClick,
+}: {
+  nombre: string;
+  total: number;
+  estado: string;
+  seleccionada: boolean;
+  onClick: () => void;
+}) {
   return (
-    <tr className="border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
-      <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">{nombre}</td>
+    <tr
+      onClick={onClick}
+      className={`cursor-pointer border-b border-slate-100 transition-colors dark:border-slate-800 ${
+        seleccionada ? "bg-teal-50 dark:bg-teal-950/40" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+      }`}
+    >
+      <td className={`px-4 py-3 font-medium ${seleccionada ? "text-[var(--brand)]" : "text-slate-800 dark:text-slate-200"}`}>
+        <div className="flex items-center gap-2">
+          <div className={`size-1.5 shrink-0 rounded-full ${seleccionada ? "bg-[var(--brand)]" : "bg-transparent"}`} />
+          {nombre}
+        </div>
+      </td>
       <td className="px-4 py-3 text-center text-slate-500 dark:text-slate-400">{total}</td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
