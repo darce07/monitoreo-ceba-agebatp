@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { UserPlus, KeyRound, Trash2 } from "lucide-react";
 import { supabase, type Ceba } from "../lib/supabase";
-import { listarUsuarios, crearUsuario, resetearPassword, eliminarUsuario, type UsuarioAdmin } from "../lib/adminUsers";
+import { listarUsuarios, crearUsuario, resetearPassword, eliminarUsuario, cambiarRol, type UsuarioAdmin } from "../lib/adminUsers";
 import { Card, Button, Select, Input, Badge, Alert, PageHeader, Skeleton } from "../components/ui";
 import { Field } from "../components/form-field";
 import { ConfirmDialog } from "../components/confirm-dialog";
@@ -174,26 +174,18 @@ export default function Usuarios() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {usuarios.map((u) => (
-                <tr key={u.id} className="group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                  <td className="px-4 py-2 font-medium text-slate-800 dark:text-slate-200">{u.nombre}</td>
-                  <td className="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">{u.email}</td>
-                  <td className="px-4 py-2">
-                    <Badge tone={u.role === "admin" ? "violet" : u.role === "especialista" ? "blue" : "slate"}>
-                      {u.role === "admin" ? "Administrador" : u.role === "especialista" ? "Especialista AGEBATP" : "Director"}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">{u.cebas ? `${u.cebas.codigo} · ${u.cebas.nombre}` : "—"}</td>
-                  <td className="px-4 py-2 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-                      <button onClick={() => setResetUser(u)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Cambiar contraseña">
-                        <KeyRound className="size-[18px]" />
-                      </button>
-                      <button onClick={() => setBorrarUser(u)} className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar usuario">
-                        <Trash2 className="size-[18px]" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                <FilaUsuario
+                  key={u.id}
+                  usuario={u}
+                  cebas={cebas}
+                  onRolCambiado={(msg) => {
+                    setOk(msg);
+                    cargar();
+                  }}
+                  onError={setError}
+                  onResetPassword={() => setResetUser(u)}
+                  onEliminar={() => setBorrarUser(u)}
+                />
               ))}
             </tbody>
           </table>
@@ -227,5 +219,97 @@ export default function Usuarios() {
         onConfirm={handleEliminar}
       />
     </div>
+  );
+}
+
+function FilaUsuario({
+  usuario,
+  cebas,
+  onRolCambiado,
+  onError,
+  onResetPassword,
+  onEliminar,
+}: {
+  usuario: UsuarioAdmin;
+  cebas: Ceba[];
+  onRolCambiado: (mensaje: string) => void;
+  onError: (mensaje: string) => void;
+  onResetPassword: () => void;
+  onEliminar: () => void;
+}) {
+  const [rolPendiente, setRolPendiente] = useState<"admin" | "especialista" | "director" | null>(null);
+  const [cebaPendiente, setCebaPendiente] = useState("");
+  const [guardando, setGuardando] = useState(false);
+
+  async function aplicar(role: "admin" | "especialista" | "director", ceba_id: string | null) {
+    setGuardando(true);
+    try {
+      await cambiarRol(usuario.id, role, ceba_id);
+      onRolCambiado(`Rol de ${usuario.email} actualizado.`);
+      setRolPendiente(null);
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "No se pudo cambiar el rol.");
+    }
+    setGuardando(false);
+  }
+
+  function handleSelectRol(nuevo: "admin" | "especialista" | "director") {
+    if (nuevo === usuario.role) return;
+    if (nuevo === "director") {
+      setRolPendiente("director");
+      setCebaPendiente(usuario.ceba_id ?? "");
+      return;
+    }
+    aplicar(nuevo, null);
+  }
+
+  return (
+    <tr className="group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
+      <td className="px-4 py-2 font-medium text-slate-800 dark:text-slate-200">{usuario.nombre}</td>
+      <td className="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">{usuario.email}</td>
+      <td className="px-4 py-2">
+        <div className="flex items-center gap-2">
+          <Select value={usuario.role} onChange={(e) => handleSelectRol(e.target.value as "admin" | "especialista" | "director")} disabled={guardando} className="w-44">
+            <option value="director">Director de CEBA</option>
+            <option value="especialista">Especialista AGEBATP</option>
+            <option value="admin">Administrador</option>
+          </Select>
+          <Badge tone={usuario.role === "admin" ? "violet" : usuario.role === "especialista" ? "blue" : "slate"}>
+            {usuario.role === "admin" ? "Admin" : usuario.role === "especialista" ? "Especialista" : "Director"}
+          </Badge>
+        </div>
+        {rolPendiente === "director" && (
+          <div className="mt-2 flex items-center gap-2">
+            <Select value={cebaPendiente} onChange={(e) => setCebaPendiente(e.target.value)} className="w-44">
+              <option value="" disabled>
+                Elegí la CEBA
+              </option>
+              {cebas.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.codigo} · {c.nombre}
+                </option>
+              ))}
+            </Select>
+            <Button size="sm" loading={guardando} disabled={!cebaPendiente} onClick={() => aplicar("director", cebaPendiente)}>
+              Guardar
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => setRolPendiente(null)}>
+              Cancelar
+            </Button>
+          </div>
+        )}
+      </td>
+      <td className="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">{usuario.cebas ? `${usuario.cebas.codigo} · ${usuario.cebas.nombre}` : "—"}</td>
+      <td className="px-4 py-2 text-right">
+        <div className="flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+          <button onClick={onResetPassword} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Cambiar contraseña">
+            <KeyRound className="size-[18px]" />
+          </button>
+          <button onClick={onEliminar} className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar usuario">
+            <Trash2 className="size-[18px]" />
+          </button>
+        </div>
+      </td>
+    </tr>
   );
 }

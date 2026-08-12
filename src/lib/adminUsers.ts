@@ -33,4 +33,7 @@ export const crearUsuario = (datos: { email: string; password: string; nombre: s
 
 export const resetearPassword = (user_id: string, password: string) => llamar<{ ok: true }>('reset_password', { user_id, password });
 
+export const cambiarRol = (user_id: string, role: 'admin' | 'especialista' | 'director', ceba_id: string | null) =>
+  llamar<{ ok: true }>('set_role', { user_id, role, ceba_id });
+
 export const eliminarUsuario = (user_id: string) => llamar<{ ok: true }>('delete', { user_id });

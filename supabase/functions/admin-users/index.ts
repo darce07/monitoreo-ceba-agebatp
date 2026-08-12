@@ -103,6 +103,20 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    if (action === "set_role") {
+      const { user_id, role, ceba_id } = body as { user_id: string; role: "admin" | "especialista" | "director"; ceba_id: string | null };
+      if (!user_id || !role) return json({ error: "Faltan datos obligatorios" }, 400);
+      if (user_id === actor.id) return json({ error: "No podés cambiar tu propio rol" }, 400);
+      if (role === "director" && !ceba_id) return json({ error: "Un director necesita una CEBA asignada" }, 400);
+
+      const { error } = await admin
+        .from("profiles")
+        .update({ role, ceba_id: role === "director" ? ceba_id : null })
+        .eq("id", user_id);
+      if (error) throw error;
+      return json({ ok: true });
+    }
+
     if (action === "delete") {
       const { user_id } = body as { user_id: string };
       if (!user_id) return json({ error: "Falta user_id" }, 400);
