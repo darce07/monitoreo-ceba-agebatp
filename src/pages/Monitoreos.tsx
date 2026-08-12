@@ -64,7 +64,9 @@ export default function Monitoreos() {
   }
 
   async function alternarActivo(m: Monitoreo) {
-    await supabase.from("monitoreos_pedagogicos").update({ activo: !m.activo }).eq("id", m.id);
+    setError(null);
+    const { error } = await supabase.from("monitoreos_pedagogicos").update({ activo: !m.activo }).eq("id", m.id);
+    if (error) setError(`No se pudo cambiar el estado: ${error.message}`);
     cargar();
   }
 

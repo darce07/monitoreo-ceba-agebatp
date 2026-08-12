@@ -141,7 +141,8 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
 
     const fechaCompacta = fecha.replaceAll("-", "");
     const ext = extensionDe(file.name);
-    const nombreArchivo = `${ceba.codigo}_${normaliza(docenteFinal.apellido_paterno)}_${fechaCompacta}_${monitoreo.codigo}${ext}`;
+    const codigoMonitoreo = normaliza(monitoreo.codigo) || "MON";
+    const nombreArchivo = `${ceba.codigo}_${normaliza(docenteFinal.apellido_paterno)}_${fechaCompacta}_${codigoMonitoreo}${ext}`;
     const storagePath = `${ceba.codigo}/${nombreArchivo}`;
 
     const { error: uploadError } = await supabase.storage.from("fichas_monitoreo").upload(storagePath, file, { upsert: true, contentType: file.type || "application/pdf" });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { UserPlus, KeyRound, Trash2 } from "lucide-react";
+import { UserPlus, KeyRound, Trash2, Eye, EyeOff } from "lucide-react";
 import { supabase, type Ceba } from "../lib/supabase";
 import { listarUsuarios, crearUsuario, resetearPassword, eliminarUsuario, cambiarRol, type UsuarioAdmin } from "../lib/adminUsers";
 import { Card, Button, Select, Input, Badge, Alert, PageHeader, Skeleton } from "../components/ui";
@@ -17,12 +17,14 @@ export default function Usuarios() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<"director" | "especialista" | "admin">("director");
   const [cebaId, setCebaId] = useState("");
   const [creando, setCreando] = useState(false);
 
   const [resetUser, setResetUser] = useState<UsuarioAdmin | null>(null);
   const [nuevaClave, setNuevaClave] = useState("");
+  const [showNuevaClave, setShowNuevaClave] = useState(false);
   const [reseteando, setReseteando] = useState(false);
 
   const [borrarUser, setBorrarUser] = useState<UsuarioAdmin | null>(null);
@@ -124,7 +126,23 @@ export default function Usuarios() {
                 <Input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full" />
               </Field>
               <Field label="Contraseña asignada" hint="Mínimo 8 caracteres." className="block">
-                <Input required type="text" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full" />
+                <div className="relative">
+                  <Input
+                    required
+                    type={showPassword ? "text" : "password"}
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-teal-600"
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
               </Field>
               <Field label="Rol" className="block">
                 <Select value={role} onChange={(e) => setRole(e.target.value as "director" | "especialista" | "admin")} className="w-full">
@@ -197,7 +215,24 @@ export default function Usuarios() {
           <Card className="w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-1 text-lg font-bold text-slate-900 dark:text-white">Cambiar contraseña</h3>
             <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{resetUser.email}</p>
-            <Input type="text" minLength={8} placeholder="Nueva contraseña (mín. 8 caracteres)" value={nuevaClave} onChange={(e) => setNuevaClave(e.target.value)} autoFocus className="w-full" />
+            <div className="relative">
+              <Input
+                type={showNuevaClave ? "text" : "password"}
+                minLength={8}
+                placeholder="Nueva contraseña (mín. 8 caracteres)"
+                value={nuevaClave}
+                onChange={(e) => setNuevaClave(e.target.value)}
+                autoFocus
+                className="w-full pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNuevaClave((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-teal-600"
+              >
+                {showNuevaClave ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
             <div className="mt-6 flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setResetUser(null)}>
                 Cancelar
