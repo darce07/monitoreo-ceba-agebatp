@@ -4,8 +4,6 @@ import { Building2, CheckCircle2, Hourglass, AlertOctagon, PieChart, X } from "l
 import { supabase, type Ceba, type Ficha, type Monitoreo } from "../lib/supabase";
 import { Card, Select, Skeleton, Alert, Button, PageHeader } from "../components/ui";
 
-const MESES = Array.from({ length: 12 }, (_, i) => `M${String(i + 1).padStart(2, "0")}`);
-
 export default function Dashboard() {
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);
@@ -38,7 +36,7 @@ export default function Dashboard() {
   }, []);
 
   const fichasAlcance = useMemo(
-    () => (filtroMonitoreo ? fichas.filter((f) => f.n_monitoreo === filtroMonitoreo) : fichas),
+    () => (filtroMonitoreo ? fichas.filter((f) => f.monitoreo_id === filtroMonitoreo) : fichas),
     [fichas, filtroMonitoreo]
   );
 
@@ -94,7 +92,7 @@ export default function Dashboard() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Dashboard de Monitoreo"
-        description={`${filtroMonitoreo ? `Solo ${filtroMonitoreo}` : "Suma general de todos los monitoreos"}${cebaActiva ? ` — filtrado a ${cebaActiva.codigo} · ${cebaActiva.nombre}` : ""} — AGEBATP, UGEL 06`}
+        description={`${filtroMonitoreo ? `Solo ${monitoreos.find((m) => m.id === filtroMonitoreo)?.nombre ?? ""}` : "Suma general de todos los monitoreos"}${cebaActiva ? ` — filtrado a ${cebaActiva.codigo} · ${cebaActiva.nombre}` : ""} — AGEBATP, UGEL 06`}
         action={
           <div className="flex flex-wrap items-center gap-2">
             {cebaActiva && (
@@ -105,9 +103,9 @@ export default function Dashboard() {
             )}
             <Select value={filtroMonitoreo} onChange={(e) => setFiltroMonitoreo(e.target.value)} className="w-full sm:w-auto">
               <option value="">Todos los monitoreos (general)</option>
-              {MESES.map((m) => (
-                <option key={m} value={m}>
-                  Solo {m}
+              {monitoreos.map((m) => (
+                <option key={m.id} value={m.id}>
+                  Solo {m.nombre}
                 </option>
               ))}
             </Select>
