@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { UploadCloud, Eye, Download, Search, Paperclip, X, FileText, User, CalendarDays, BookOpen, Trash2 } from "lucide-react";
 import { supabase, type Ceba, type Docente, type Ficha, type Monitoreo, type Profile } from "../lib/supabase";
-import { abrirFichaPdf } from "../lib/storage";
+import { abrirFichaPdf, obtenerUrlVistaPrevia } from "../lib/storage";
+import { PreviewModal } from "../components/preview-modal";
 import { ESTADO_TONE } from "../lib/utils";
 import { Card, Button, Select, Input, Badge, Alert, PageHeader } from "../components/ui";
 import { Field } from "../components/form-field";
@@ -47,6 +48,16 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
   const [busqueda, setBusqueda] = useState("");
   const [borrarFicha, setBorrarFicha] = useState<Ficha | null>(null);
   const [borrando, setBorrando] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  async function verFicha(storagePath: string) {
+    const { url, error } = await obtenerUrlVistaPrevia(storagePath);
+    if (!url) {
+      setLoadError(error);
+      return;
+    }
+    setPreviewUrl(url);
+  }
 
   useEffect(() => {
     if (!profile.ceba_id) return;
@@ -371,7 +382,7 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
                 {f.estado === "Observado" && f.observaciones && <p className="mt-1 text-xs text-rose-600">Observación: {f.observaciones}</p>}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={async () => setLoadError((await abrirFichaPdf(f.storage_path, false)) ?? null)} className="rounded-lg p-1.5 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver documento">
+                <button onClick={() => verFicha(f.storage_path)} className="rounded-lg p-1.5 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver documento">
                   <Eye className="size-[18px]" />
                 </button>
                 <button onClick={async () => setLoadError((await abrirFichaPdf(f.storage_path, true)) ?? null)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar">
@@ -395,6 +406,8 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
         loading={borrando}
         onConfirm={eliminarFicha}
       />
+
+      {previewUrl && <PreviewModal url={previewUrl} onClose={() => setPreviewUrl(null)} />}
     </div>
   );
 }

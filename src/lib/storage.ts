@@ -1,12 +1,22 @@
 import { supabase } from './supabase';
 
-export async function abrirFichaPdf(storagePath: string, download: boolean): Promise<string | null> {
+async function firmarUrl(storagePath: string, download: boolean) {
   const { data, error } = await supabase.storage
     .from('fichas_monitoreo')
-    .createSignedUrl(storagePath, 60, download ? { download: true } : undefined);
+    .createSignedUrl(storagePath, 300, download ? { download: true } : undefined);
   if (error || !data?.signedUrl) {
-    return `No se pudo generar el enlace del PDF: ${error?.message ?? 'error desconocido'}`;
+    return { url: null, error: `No se pudo generar el enlace del documento: ${error?.message ?? 'error desconocido'}` };
   }
-  window.open(data.signedUrl, '_blank');
+  return { url: data.signedUrl, error: null };
+}
+
+export async function abrirFichaPdf(storagePath: string, download: boolean): Promise<string | null> {
+  const { url, error } = await firmarUrl(storagePath, download);
+  if (!url) return error;
+  window.open(url, '_blank');
   return null;
+}
+
+export async function obtenerUrlVistaPrevia(storagePath: string): Promise<{ url: string | null; error: string | null }> {
+  return firmarUrl(storagePath, false);
 }

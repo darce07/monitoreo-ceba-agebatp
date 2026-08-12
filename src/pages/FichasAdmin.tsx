@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { X, Trash2, Pencil, Eye, Download, ChevronLeft, ChevronRight, FileText, Search } from "lucide-react";
 import { supabase, type Ceba, type Docente, type Ficha, type Monitoreo, type Profile } from "../lib/supabase";
-import { abrirFichaPdf } from "../lib/storage";
+import { abrirFichaPdf, obtenerUrlVistaPrevia } from "../lib/storage";
+import { PreviewModal } from "../components/preview-modal";
 import { ESTADO_TONE } from "../lib/utils";
 import { Card, Button, Select, Input, Badge, Alert, PageHeader, EmptyState, Skeleton } from "../components/ui";
 import { Field } from "../components/form-field";
@@ -36,6 +37,16 @@ export default function FichasAdmin() {
   const [panelFicha, setPanelFicha] = useState<Ficha | null>(null);
   const [borrarFicha, setBorrarFicha] = useState<Ficha | null>(null);
   const [borrando, setBorrando] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  async function verFicha(storagePath: string) {
+    const { url, error } = await obtenerUrlVistaPrevia(storagePath);
+    if (!url) {
+      setError(error);
+      return;
+    }
+    setPreviewUrl(url);
+  }
 
   async function cargar() {
     setError(null);
@@ -213,7 +224,7 @@ export default function FichasAdmin() {
                     <td className="px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200">{f.n_monitoreo}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
-                        <button onClick={async () => setError((await abrirFichaPdf(f.storage_path, false)) ?? null)} className="rounded p-1 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver PDF">
+                        <button onClick={() => verFicha(f.storage_path)} className="rounded p-1 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver PDF">
                           <Eye className="size-[18px]" />
                         </button>
                         <button onClick={async () => setError((await abrirFichaPdf(f.storage_path, true)) ?? null)} className="rounded p-1 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar PDF">
@@ -267,6 +278,7 @@ export default function FichasAdmin() {
           docentesDeCeba={docentes.filter((d) => d.ceba_id === panelFicha.ceba_id)}
           monitoreos={monitoreos}
           puedeRevisar={puedeRevisar}
+          onVer={() => verFicha(panelFicha.storage_path)}
           onClose={() => setPanelFicha(null)}
           onSaved={() => {
             setPanelFicha(null);
@@ -274,6 +286,8 @@ export default function FichasAdmin() {
           }}
         />
       )}
+
+      {previewUrl && <PreviewModal url={previewUrl} onClose={() => setPreviewUrl(null)} />}
 
       <ConfirmDialog
         open={!!borrarFicha}
@@ -293,6 +307,7 @@ function EditPanel({
   docentesDeCeba,
   monitoreos,
   puedeRevisar,
+  onVer,
   onClose,
   onSaved,
 }: {
@@ -300,6 +315,7 @@ function EditPanel({
   docentesDeCeba: Docente[];
   monitoreos: Monitoreo[];
   puedeRevisar: boolean;
+  onVer: () => void;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -368,7 +384,7 @@ function EditPanel({
 
         <div className="flex-1 space-y-5 overflow-y-auto p-6">
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" className="flex-1" onClick={async () => setError((await abrirFichaPdf(ficha.storage_path, false)) ?? null)}>
+            <Button variant="secondary" size="sm" className="flex-1" onClick={onVer}>
               <Eye className="size-4" /> Ver PDF
             </Button>
             <Button variant="secondary" size="sm" className="flex-1" onClick={async () => setError((await abrirFichaPdf(ficha.storage_path, true)) ?? null)}>
