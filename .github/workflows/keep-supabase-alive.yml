@@ -1,0 +1,23 @@
+name: Keep Supabase alive
+
+on:
+  schedule:
+    # Todos los lunes a las 09:00 UTC (~04:00 hora Perú), bien antes del
+    # limite de 7 dias de inactividad que usa Supabase free tier para
+    # pausar el proyecto.
+    - cron: "0 9 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consulta minima a Supabase
+        run: |
+          curl --fail --silent --show-error \
+            "${SUPABASE_URL}/rest/v1/cebas?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
