@@ -4,7 +4,7 @@ const FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-u
 
 export type UsuarioAdmin = {
   id: string;
-  role: 'admin' | 'director';
+  role: 'admin' | 'especialista' | 'director';
   ceba_id: string | null;
   nombre: string;
   email: string | null;
@@ -28,7 +28,7 @@ async function llamar<T>(action: string, payload: Record<string, unknown> = {}):
 
 export const listarUsuarios = () => llamar<{ users: UsuarioAdmin[] }>('list');
 
-export const crearUsuario = (datos: { email: string; password: string; nombre: string; role: 'admin' | 'director'; ceba_id: string | null }) =>
+export const crearUsuario = (datos: { email: string; password: string; nombre: string; role: 'admin' | 'especialista' | 'director'; ceba_id: string | null }) =>
   llamar<{ id: string }>('create', datos);
 
 export const resetearPassword = (user_id: string, password: string) => llamar<{ ok: true }>('reset_password', { user_id, password });

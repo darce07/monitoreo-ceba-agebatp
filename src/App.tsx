@@ -33,7 +33,7 @@ export default function App() {
     );
   }
 
-  if (profile.role === "admin") {
+  if (profile.role === "admin" || profile.role === "especialista") {
     return (
       <Routes>
         <Route element={<AdminLayout profile={profile} />}>

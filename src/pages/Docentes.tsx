@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { Search, Users, Pencil, Trash2 } from "lucide-react";
-import { supabase, type Ceba, type Docente, type Ficha } from "../lib/supabase";
+import { supabase, type Ceba, type Docente, type Ficha, type Profile } from "../lib/supabase";
 import { Card, Select, Input, Alert, Button, PageHeader, EmptyState, Skeleton } from "../components/ui";
 import { Field } from "../components/form-field";
 import { ConfirmDialog } from "../components/confirm-dialog";
@@ -17,6 +18,8 @@ function iniciales(nombre: string) {
 }
 
 export default function Docentes() {
+  const profile = useOutletContext<Profile>();
+  const puedeEditar = profile.role === "admin";
   const [docentes, setDocentes] = useState<Docente[]>([]);
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);
@@ -205,6 +208,7 @@ export default function Docentes() {
                         )}
                       </td>
                       <td className="px-4 py-2 text-right">
+                        {puedeEditar ? (
                         <div className="flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
                           <button onClick={() => abrirEdicion(d)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar nombre">
                             <Pencil className="size-[18px]" />
@@ -218,6 +222,9 @@ export default function Docentes() {
                             <Trash2 className="size-[18px]" />
                           </button>
                         </div>
+                        ) : (
+                          <span className="text-xs text-slate-300 dark:text-slate-700">Solo lectura</span>
+                        )}
                       </td>
                     </tr>
                   );

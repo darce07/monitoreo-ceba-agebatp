@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { X, Trash2, Pencil, Eye, Download, ChevronLeft, ChevronRight, FileText, Search } from "lucide-react";
-import { supabase, type Ceba, type Docente, type Ficha } from "../lib/supabase";
+import { supabase, type Ceba, type Docente, type Ficha, type Profile } from "../lib/supabase";
 import { abrirFichaPdf } from "../lib/storage";
 import { ESTADO_TONE } from "../lib/utils";
 import { Card, Button, Select, Input, Badge, Alert, PageHeader, EmptyState, Skeleton } from "../components/ui";
@@ -13,6 +14,8 @@ const ESTADOS: Ficha["estado"][] = ["Pendiente", "Recibido", "Observado"];
 const PAGE_SIZE = 15;
 
 export default function FichasAdmin() {
+  const profile = useOutletContext<Profile>();
+  const puedeEditar = profile.role === "admin";
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [docentes, setDocentes] = useState<Docente[]>([]);
@@ -211,14 +214,18 @@ export default function FichasAdmin() {
                       <Badge tone={ESTADO_TONE[f.estado]}>{f.estado}</Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-                        <button onClick={() => setPanelFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar">
-                          <Pencil className="size-[18px]" />
-                        </button>
-                        <button onClick={() => setBorrarFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar">
-                          <Trash2 className="size-[18px]" />
-                        </button>
-                      </div>
+                      {puedeEditar ? (
+                        <div className="flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                          <button onClick={() => setPanelFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Editar">
+                            <Pencil className="size-[18px]" />
+                          </button>
+                          <button onClick={() => setBorrarFicha(f)} className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" title="Eliminar">
+                            <Trash2 className="size-[18px]" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-300 dark:text-slate-700">Solo lectura</span>
+                      )}
                     </td>
                   </tr>
                 ))}

@@ -7,7 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Profile = {
   id: string;
-  role: 'admin' | 'director';
+  role: 'admin' | 'especialista' | 'director';
   ceba_id: string | null;
   nombre: string | null;
 };

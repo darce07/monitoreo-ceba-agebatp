@@ -16,20 +16,19 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const navGroups: NavGroup[] = [
-  {
-    label: "Principal",
-    items: [
-      { label: "Inicio", href: "/", icon: LayoutDashboard, end: true },
-      { label: "Fichas", href: "/fichas", icon: FileText },
-      { label: "Gestión Docente", href: "/docentes", icon: Users },
-      { label: "Usuarios", href: "/usuarios", icon: UserCog },
-    ],
-  },
-];
+function navGroupsPara(role: Profile["role"]): NavGroup[] {
+  const items: NavItem[] = [
+    { label: "Inicio", href: "/", icon: LayoutDashboard, end: true },
+    { label: "Fichas", href: "/fichas", icon: FileText },
+    { label: "Gestión Docente", href: "/docentes", icon: Users },
+  ];
+  if (role === "admin") items.push({ label: "Usuarios", href: "/usuarios", icon: UserCog });
+  return [{ label: "Principal", items }];
+}
 
 const ROL_LABEL: Record<Profile["role"], string> = {
-  admin: "Especialista AGEBATP",
+  admin: "Administrador",
+  especialista: "Especialista AGEBATP",
   director: "Director de CEBA",
 };
 
@@ -41,6 +40,7 @@ export function AdminLayout({ profile }: { profile: Profile }) {
   const displayName = profile.nombre ?? "Especialista";
   const initials =
     displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "A";
+  const navGroups = navGroupsPara(profile.role);
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
@@ -152,7 +152,7 @@ export function AdminLayout({ profile }: { profile: Profile }) {
           </div>
         </header>
         <main className="min-w-0 overflow-x-hidden px-3 py-4 sm:px-6 sm:py-5 lg:px-8" key={location.pathname}>
-          <Outlet />
+          <Outlet context={profile} />
         </main>
       </div>
     </div>

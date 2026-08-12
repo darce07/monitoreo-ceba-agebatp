@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
         email: string;
         password: string;
         nombre: string;
-        role: "admin" | "director";
+        role: "admin" | "especialista" | "director";
         ceba_id: string | null;
       };
 

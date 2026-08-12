@@ -17,7 +17,7 @@ export default function Usuarios() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"director" | "admin">("director");
+  const [role, setRole] = useState<"director" | "especialista" | "admin">("director");
   const [cebaId, setCebaId] = useState("");
   const [creando, setCreando] = useState(false);
 
@@ -127,9 +127,10 @@ export default function Usuarios() {
                 <Input required type="text" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full" />
               </Field>
               <Field label="Rol" className="block">
-                <Select value={role} onChange={(e) => setRole(e.target.value as "director" | "admin")} className="w-full">
+                <Select value={role} onChange={(e) => setRole(e.target.value as "director" | "especialista" | "admin")} className="w-full">
                   <option value="director">Director de CEBA</option>
-                  <option value="admin">Especialista AGEBATP (admin)</option>
+                  <option value="especialista">Especialista AGEBATP (solo ver)</option>
+                  <option value="admin">Administrador (permiso total)</option>
                 </Select>
               </Field>
               {role === "director" && (
@@ -177,7 +178,9 @@ export default function Usuarios() {
                   <td className="px-4 py-2 font-medium text-slate-800 dark:text-slate-200">{u.nombre}</td>
                   <td className="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">{u.email}</td>
                   <td className="px-4 py-2">
-                    <Badge tone={u.role === "admin" ? "blue" : "slate"}>{u.role === "admin" ? "Especialista AGEBATP" : "Director"}</Badge>
+                    <Badge tone={u.role === "admin" ? "violet" : u.role === "especialista" ? "blue" : "slate"}>
+                      {u.role === "admin" ? "Administrador" : u.role === "especialista" ? "Especialista AGEBATP" : "Director"}
+                    </Badge>
                   </td>
                   <td className="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">{u.cebas ? `${u.cebas.codigo} · ${u.cebas.nombre}` : "—"}</td>
                   <td className="px-4 py-2 text-right">
