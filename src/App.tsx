@@ -74,5 +74,11 @@ export default function App() {
     );
   }
 
-  return <UploadFicha profile={profile} />;
+  return (
+    <Routes>
+      <Route element={<AdminLayout profile={profile} />}>
+        <Route index element={<UploadFicha profile={profile} />} />
+      </Route>
+    </Routes>
+  );
 }

@@ -1,20 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { UploadCloud, Bell, HelpCircle, LogOut, Eye, Download, Search, Paperclip, X } from "lucide-react";
+import { UploadCloud, Eye, Download, Search, Paperclip, X } from "lucide-react";
 import { supabase, type Ceba, type Docente, type Ficha, type Profile } from "../lib/supabase";
 import { abrirFichaPdf } from "../lib/storage";
 import { ESTADO_TONE } from "../lib/utils";
-import { Card, Button, Select, Input, Badge, Alert } from "../components/ui";
+import { Card, Button, Select, Input, Badge, Alert, PageHeader } from "../components/ui";
 import { Field } from "../components/form-field";
 
 const AREAS = ["Comunicación", "Matemática", "Ciencia y Tecnología", "Ciencias Sociales", "Otra"];
 const MESES = Array.from({ length: 12 }, (_, i) => `M${String(i + 1).padStart(2, "0")}`);
 const NUEVO_DOCENTE = "__nuevo__";
 const ACEPTA_FICHA = ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-
-function iniciales(nombre: string) {
-  const partes = nombre.trim().split(/\s+/);
-  return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase() || "D";
-}
 
 function normaliza(texto: string) {
   return texto
@@ -189,47 +184,15 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 dark:bg-slate-950">
-      <header className="safe-top sticky top-0 z-30 flex h-20 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/85 sm:px-6">
-        <span className="font-serif text-base font-bold text-slate-900 dark:text-white">Monitoreo CEBA</span>
-        <div className="ml-auto flex items-center gap-1">
-          <button className="relative grid size-10 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
-            <Bell className="size-5" />
-          </button>
-          <button className="hidden size-10 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 sm:grid">
-            <HelpCircle className="size-5" />
-          </button>
-          {ceba?.director_nombre && (
-            <div className="ml-1 flex items-center gap-2 border-l border-slate-200 pl-3 dark:border-slate-800">
-              <div className="hidden text-right sm:block">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{ceba.director_nombre}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Director de CEBA</p>
-              </div>
-              <div className="grid size-10 place-items-center rounded-xl bg-teal-100 text-sm font-bold text-teal-800 dark:bg-teal-950 dark:text-teal-300">
-                {iniciales(ceba.director_nombre)}
-              </div>
-            </div>
-          )}
-          <button onClick={() => supabase.auth.signOut()} className="grid size-10 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" title="Cerrar sesión">
-            <LogOut className="size-5" />
-          </button>
-        </div>
-      </header>
+    <div className="mx-auto flex max-w-3xl flex-col gap-4">
+      <PageHeader title="Registrar Fichas" description={ceba ? `${ceba.nombre} · Código ${ceba.codigo} · Monitoreo pedagógico AGEBATP` : "Monitoreo pedagógico AGEBATP"} />
 
-      <main className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-4 sm:px-6">
-        {loadError && <Alert variant="error">{loadError}</Alert>}
+      {loadError && <Alert variant="error">{loadError}</Alert>}
 
-        {ceba && (
-          <section className="mb-2">
-            <h1 className="font-serif text-2xl font-bold text-slate-950 dark:text-white">{ceba.nombre}</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Código {ceba.codigo} · Monitoreo pedagógico AGEBATP</p>
-          </section>
-        )}
-
-        <Button onClick={() => setShowForm((v) => !v)} className="w-full py-6 text-base">
-          <UploadCloud className="size-6" />
-          {showForm ? "Cerrar formulario" : "Subir Ficha de Monitoreo"}
-        </Button>
+      <Button onClick={() => setShowForm((v) => !v)} className="w-full py-6 text-base">
+        <UploadCloud className="size-6" />
+        {showForm ? "Cerrar formulario" : "Subir Ficha de Monitoreo"}
+      </Button>
 
         {showForm && (
           <Card className="space-y-4 p-6">
@@ -341,7 +304,6 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
             ))}
           </div>
         </section>
-      </main>
     </div>
   );
 }

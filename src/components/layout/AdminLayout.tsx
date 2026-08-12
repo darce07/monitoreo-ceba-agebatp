@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Bell, LayoutDashboard, FileText, Users, UserCog, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, X, type LucideIcon } from "lucide-react";
+import { Bell, LayoutDashboard, FileText, Users, UserCog, UploadCloud, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, X, type LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { supabase, type Profile } from "../../lib/supabase";
 
@@ -17,6 +17,9 @@ interface NavGroup {
 }
 
 function navGroupsPara(role: Profile["role"]): NavGroup[] {
+  if (role === "director") {
+    return [{ label: "Principal", items: [{ label: "Registrar Fichas", href: "/", icon: UploadCloud, end: true }] }];
+  }
   const items: NavItem[] = [
     { label: "Inicio", href: "/", icon: LayoutDashboard, end: true },
     { label: "Fichas", href: "/fichas", icon: FileText },
