@@ -182,7 +182,6 @@ export default function Docentes() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {docentesFiltrados.map((d, i) => {
                   const ultima = ultimaFichaPorDocente.get(d.id);
-                  const tieneFichas = (conteoPorDocente.get(d.id) ?? 0) > 0;
                   return (
                     <tr key={d.id} className="group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
                       <td className="px-4 py-2">
@@ -215,9 +214,8 @@ export default function Docentes() {
                           </button>
                           <button
                             onClick={() => setBorrarDocente(d)}
-                            disabled={tieneFichas}
-                            title={tieneFichas ? "No se puede eliminar: ya tiene fichas registradas" : "Eliminar"}
-                            className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent dark:hover:bg-rose-950"
+                            title="Eliminar"
+                            className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950"
                           >
                             <Trash2 className="size-[18px]" />
                           </button>
@@ -267,7 +265,7 @@ export default function Docentes() {
         open={!!borrarDocente}
         onOpenChange={(open) => !open && setBorrarDocente(null)}
         title="¿Eliminar docente?"
-        description={`Se eliminará "${borrarDocente?.nombre}" del directorio. Solo es posible porque todavía no tiene fichas registradas.`}
+        description={`Se eliminará "${borrarDocente?.nombre}" del directorio. Si tiene fichas subidas, van a quedar marcadas como "Sin docente asignado" en vez de perderse.`}
         loading={borrando}
         onConfirm={confirmarEliminar}
       />
