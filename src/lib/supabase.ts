@@ -35,11 +35,23 @@ export type Ficha = {
   observaciones: string | null;
   deleted_at: string | null;
   created_at: string;
+  titulo: string | null;
+};
+
+export type FichaAnexo = {
+  id: string;
+  ficha_id: string;
+  nombre_archivo: string;
+  storage_path: string;
+  created_at: string;
 };
 
 export type Docente = {
   id: string;
   ceba_id: string;
   nombre: string;
+  nombres: string;
+  apellido_paterno: string;
+  apellido_materno: string | null;
   created_at: string;
 };

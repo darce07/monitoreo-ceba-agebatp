@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, Trash2, Pencil, Eye, Download, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { X, Trash2, Pencil, Eye, Download, ChevronLeft, ChevronRight, FileText, Search } from "lucide-react";
 import { supabase, type Ceba, type Docente, type Ficha } from "../lib/supabase";
 import { abrirFichaPdf } from "../lib/storage";
 import { ESTADO_TONE } from "../lib/utils";
@@ -19,6 +19,7 @@ export default function FichasAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [busqueda, setBusqueda] = useState("");
   const [filtroCeba, setFiltroCeba] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<Ficha["estado"] | "">("");
   const [filtroDocente, setFiltroDocente] = useState("");
@@ -56,6 +57,7 @@ export default function FichasAdmin() {
   const cebaById = useMemo(() => Object.fromEntries(cebas.map((c) => [c.id, c])), [cebas]);
 
   const fichasFiltradas = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
     return fichas.filter((f) => {
       if (filtroCeba && f.ceba_id !== filtroCeba) return false;
       if (filtroEstado && f.estado !== filtroEstado) return false;
@@ -63,9 +65,10 @@ export default function FichasAdmin() {
       if (filtroMonitoreo && f.n_monitoreo !== filtroMonitoreo) return false;
       if (filtroDesde && f.fecha_monitoreo < filtroDesde) return false;
       if (filtroHasta && f.fecha_monitoreo > filtroHasta) return false;
+      if (q && !(f.titulo ?? "").toLowerCase().includes(q) && !f.nombre_pdf.toLowerCase().includes(q) && !f.docente.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [fichas, filtroCeba, filtroEstado, filtroDocente, filtroMonitoreo, filtroDesde, filtroHasta]);
+  }, [fichas, busqueda, filtroCeba, filtroEstado, filtroDocente, filtroMonitoreo, filtroDesde, filtroHasta]);
 
   const totalPages = Math.max(1, Math.ceil(fichasFiltradas.length / PAGE_SIZE));
   const pageClamped = Math.min(page, totalPages);
@@ -96,6 +99,11 @@ export default function FichasAdmin() {
       <PageHeader title="Gestión de Fichas" description={`${fichasFiltradas.length} de ${fichas.length} ficha(s) — administre y revise los registros de monitoreo.`} />
 
       {error && <Alert variant="error">{error}</Alert>}
+
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+        <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por título, nombre de archivo o docente..." className="w-full pl-9" />
+      </div>
 
       <Card className="flex flex-col gap-4 p-4 xl:flex-row xl:items-end">
         <Field label="CEBA" className="min-w-[200px] flex-1">

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, Users, Pencil, Trash2 } from "lucide-react";
 import { supabase, type Ceba, type Docente, type Ficha } from "../lib/supabase";
 import { Card, Select, Input, Alert, Button, PageHeader, EmptyState, Skeleton } from "../components/ui";
+import { Field } from "../components/form-field";
 import { ConfirmDialog } from "../components/confirm-dialog";
 
 const AVATAR_TONES = [
@@ -25,7 +26,9 @@ export default function Docentes() {
   const [busqueda, setBusqueda] = useState("");
 
   const [editando, setEditando] = useState<Docente | null>(null);
-  const [nuevoNombre, setNuevoNombre] = useState("");
+  const [nuevosNombres, setNuevosNombres] = useState("");
+  const [nuevoApPaterno, setNuevoApPaterno] = useState("");
+  const [nuevoApMaterno, setNuevoApMaterno] = useState("");
   const [guardandoNombre, setGuardandoNombre] = useState(false);
 
   const [borrarDocente, setBorrarDocente] = useState<Docente | null>(null);
@@ -86,14 +89,21 @@ export default function Docentes() {
 
   function abrirEdicion(d: Docente) {
     setEditando(d);
-    setNuevoNombre(d.nombre);
+    setNuevosNombres(d.nombres);
+    setNuevoApPaterno(d.apellido_paterno);
+    setNuevoApMaterno(d.apellido_materno ?? "");
   }
 
   async function guardarNombre() {
     if (!editando) return;
     setGuardandoNombre(true);
     setError(null);
-    const { error } = await supabase.rpc("rename_docente", { p_docente_id: editando.id, p_nuevo_nombre: nuevoNombre });
+    const { error } = await supabase.rpc("rename_docente", {
+      p_docente_id: editando.id,
+      p_nombres: nuevosNombres,
+      p_apellido_paterno: nuevoApPaterno,
+      p_apellido_materno: nuevoApMaterno || null,
+    });
     setGuardandoNombre(false);
     if (error) {
       setError(`Error al renombrar: ${error.message}`);
@@ -223,12 +233,22 @@ export default function Docentes() {
           <Card className="w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-1 text-lg font-bold text-slate-900 dark:text-white">Editar nombre del docente</h3>
             <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">Actualiza también el nombre en las fichas ya subidas de este docente.</p>
-            <Input value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} autoFocus className="w-full" />
+            <div className="space-y-3">
+              <Field label="Nombres">
+                <Input value={nuevosNombres} onChange={(e) => setNuevosNombres(e.target.value)} autoFocus className="w-full" />
+              </Field>
+              <Field label="Apellido paterno">
+                <Input value={nuevoApPaterno} onChange={(e) => setNuevoApPaterno(e.target.value)} className="w-full" />
+              </Field>
+              <Field label="Apellido materno (opcional)">
+                <Input value={nuevoApMaterno} onChange={(e) => setNuevoApMaterno(e.target.value)} className="w-full" />
+              </Field>
+            </div>
             <div className="mt-6 flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setEditando(null)}>
                 Cancelar
               </Button>
-              <Button loading={guardandoNombre} onClick={guardarNombre} disabled={!nuevoNombre.trim()}>
+              <Button loading={guardandoNombre} onClick={guardarNombre} disabled={!nuevosNombres.trim() || !nuevoApPaterno.trim()}>
                 Guardar
               </Button>
             </div>
