@@ -24,6 +24,7 @@ function navGroupsPara(role: Profile["role"]): NavGroup[] {
         items: [
           { label: "Registrar Fichas", href: "/", icon: UploadCloud, end: true },
           { label: "Fichas", href: "/fichas", icon: FileText },
+          { label: "Gestión Docente", href: "/docentes", icon: Users },
         ],
       },
     ];

@@ -36,7 +36,6 @@ export default function App() {
 
   const esDirector = profile.role === "director";
   const esAdmin = profile.role === "admin";
-  const puedeVerDocentesYMonitoreos = !esDirector;
 
   return (
     <Routes>
@@ -61,17 +60,15 @@ export default function App() {
             </Suspense>
           }
         />
-        {puedeVerDocentesYMonitoreos && (
-          <Route
-            path="docentes"
-            element={
-              <Suspense fallback={<Skeleton className="h-64" />}>
-                <Docentes />
-              </Suspense>
-            }
-          />
-        )}
-        {puedeVerDocentesYMonitoreos && (
+        <Route
+          path="docentes"
+          element={
+            <Suspense fallback={<Skeleton className="h-64" />}>
+              <Docentes />
+            </Suspense>
+          }
+        />
+        {!esDirector && (
           <Route
             path="monitoreos"
             element={
