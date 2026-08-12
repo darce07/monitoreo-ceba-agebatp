@@ -9,6 +9,7 @@ import { Skeleton } from "./components/ui";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const FichasAdmin = lazy(() => import("./pages/FichasAdmin"));
 const Docentes = lazy(() => import("./pages/Docentes"));
+const Usuarios = lazy(() => import("./pages/Usuarios"));
 
 export default function App() {
   const { session, profile, loading } = useProfile();
@@ -57,6 +58,14 @@ export default function App() {
             element={
               <Suspense fallback={<Skeleton className="h-64" />}>
                 <Docentes />
+              </Suspense>
+            }
+          />
+          <Route
+            path="usuarios"
+            element={
+              <Suspense fallback={<Skeleton className="h-64" />}>
+                <Usuarios />
               </Suspense>
             }
           />

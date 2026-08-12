@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Bell, LayoutDashboard, FileText, Users, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, X, type LucideIcon } from "lucide-react";
+import { Bell, LayoutDashboard, FileText, Users, UserCog, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, X, type LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { supabase, type Profile } from "../../lib/supabase";
 
@@ -23,6 +23,7 @@ const navGroups: NavGroup[] = [
       { label: "Inicio", href: "/", icon: LayoutDashboard, end: true },
       { label: "Fichas", href: "/fichas", icon: FileText },
       { label: "Gestión Docente", href: "/docentes", icon: Users },
+      { label: "Usuarios", href: "/usuarios", icon: UserCog },
     ],
   },
 ];
