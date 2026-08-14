@@ -1,10 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toPng } from "html-to-image";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { Building2, CheckCircle2, Hourglass, AlertOctagon, PieChart, X } from "lucide-react";
+import { Building2, CheckCircle2, Hourglass, AlertOctagon, PieChart, X, Download } from "lucide-react";
 import { supabase, type Ceba, type Ficha, type Monitoreo } from "../lib/supabase";
 import { Card, Select, Skeleton, Alert, Button, PageHeader } from "../components/ui";
+import { useToast } from "../components/toast";
 
 export default function Dashboard() {
+  const toast = useToast();
+  const exportRef = useRef<HTMLDivElement>(null);
+  const [exportAbierto, setExportAbierto] = useState(false);
+  const [exportando, setExportando] = useState(false);
+  const [incluirKpis, setIncluirKpis] = useState(true);
+  const [incluirGrafico, setIncluirGrafico] = useState(true);
+  const [incluirTabla, setIncluirTabla] = useState(true);
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [monitoreos, setMonitoreos] = useState<Monitoreo[]>([]);
@@ -78,6 +87,28 @@ export default function Dashboard() {
     return porCeba.map((c) => ({ nombre: c.ceba.codigo, fichas: c.total })).sort((a, b) => b.fichas - a.fichas);
   }, [cebaActiva, monitoreos, fichasEnfoque, porCeba]);
 
+  async function descargarImagen() {
+    if (!exportRef.current) return;
+    setExportando(true);
+    try {
+      const dataUrl = await toPng(exportRef.current, {
+        pixelRatio: 3,
+        backgroundColor: document.documentElement.classList.contains("dark") ? "#0f172a" : "#ffffff",
+        cacheBust: true,
+      });
+      const fecha = new Date().toISOString().slice(0, 10);
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `dashboard-monitoreo-ceba-${fecha}.png`;
+      a.click();
+      setExportAbierto(false);
+      toast.success("Imagen descargada.");
+    } catch {
+      toast.error("No se pudo generar la imagen. Probá de nuevo.");
+    }
+    setExportando(false);
+  }
+
   if (loading) return <DashboardSkeleton />;
   if (error) {
     return (
@@ -109,6 +140,10 @@ export default function Dashboard() {
                 </option>
               ))}
             </Select>
+            <Button size="sm" variant="secondary" type="button" onClick={() => setExportAbierto(true)} className="gap-1.5">
+              <Download className="size-3.5" />
+              Descargar imagen
+            </Button>
           </div>
         }
       />
@@ -189,6 +224,116 @@ export default function Dashboard() {
             </table>
           </div>
         </Card>
+      </div>
+
+      {exportAbierto && (
+        <div className="animate-fade-in fixed inset-0 z-[100] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={() => !exportando && setExportAbierto(false)}>
+          <Card className="animate-scale-in w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-1 text-lg font-bold text-slate-900 dark:text-white">Descargar imagen del dashboard</h3>
+            <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">Elegí qué secciones incluir en la imagen (alta resolución, PNG).</p>
+            <div className="space-y-2.5">
+              <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-slate-200 p-3 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                <input type="checkbox" checked={incluirKpis} onChange={(e) => setIncluirKpis(e.target.checked)} className="size-4 accent-[var(--brand)]" />
+                Tarjetas resumen (KPIs)
+              </label>
+              <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-slate-200 p-3 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                <input type="checkbox" checked={incluirGrafico} onChange={(e) => setIncluirGrafico(e.target.checked)} className="size-4 accent-[var(--brand)]" />
+                Gráfico de fichas
+              </label>
+              <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-slate-200 p-3 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                <input type="checkbox" checked={incluirTabla} onChange={(e) => setIncluirTabla(e.target.checked)} className="size-4 accent-[var(--brand)]" />
+                Tabla resumen por CEBA
+              </label>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setExportAbierto(false)} disabled={exportando}>
+                Cancelar
+              </Button>
+              <Button loading={exportando} disabled={!incluirKpis && !incluirGrafico && !incluirTabla} onClick={descargarImagen}>
+                <Download className="size-4" /> Descargar
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Contenedor fuera de pantalla: se captura tal cual para el PNG, respeta las secciones elegidas. */}
+      <div className="pointer-events-none fixed left-0 top-0 -z-50 w-[1100px] opacity-0" aria-hidden="true">
+        <div ref={exportRef} className="flex flex-col gap-6 bg-white p-8 dark:bg-slate-950">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700 dark:text-teal-400">AGEBATP · UGEL 06</p>
+            <h1 className="text-2xl font-bold text-slate-950 dark:text-white">Dashboard de Monitoreo</h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {filtroMonitoreo ? `Solo ${monitoreos.find((m) => m.id === filtroMonitoreo)?.nombre ?? ""}` : "Suma general de todos los monitoreos"}
+              {cebaActiva ? ` — filtrado a ${cebaActiva.codigo} · ${cebaActiva.nombre}` : ""}
+              {" — "}Generado el {new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
+            </p>
+          </div>
+
+          {incluirKpis && (
+            <div className="grid grid-cols-5 gap-4">
+              <KpiCard label="Total CEBA" value={cebas.length} icon={Building2} iconClass="text-[var(--brand)]" sub="Instituciones asignadas" />
+              <KpiCard label="Fichas Recibidas" value={totales.recibidos} icon={CheckCircle2} iconClass="text-teal-600" sub={`de ${cebas.length} CEBA`} />
+              <KpiCard label="CEBA sin ficha" value={totales.cebasSinFicha} icon={Hourglass} iconClass="text-amber-600" sub="Meta total aún sin definir" />
+              <KpiCard
+                label="Fichas Observadas"
+                value={totales.observados}
+                icon={AlertOctagon}
+                iconClass="text-rose-600"
+                sub={totales.observados > 0 ? "Con observaciones" : "Ninguna observada"}
+                subClass={totales.observados > 0 ? "text-rose-600" : "text-emerald-600"}
+              />
+              <Card className="flex flex-col justify-between p-4">
+                <div className="mb-2 flex items-start justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">% Avance</span>
+                  <PieChart className="size-5 text-teal-400" />
+                </div>
+                <div>
+                  <div className="text-3xl font-bold tabular-nums text-slate-900 dark:text-white">{totales.avance}%</div>
+                  <div className="mb-1 mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div className="h-1.5 rounded-full bg-[var(--brand)]" style={{ width: `${totales.avance}%` }} />
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {incluirGrafico && (
+            <Card className="flex flex-col p-5">
+              <h3 className="mb-4 font-bold text-slate-900 dark:text-white">
+                {cebaActiva ? `Fichas de ${cebaActiva.codigo} por monitoreo` : "Fichas subidas por CEBA"}
+              </h3>
+              <BarChart width={1000} height={280} data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                <XAxis dataKey="nombre" tick={{ fontSize: 11, fill: "var(--chart-text)" }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--chart-text)" }} />
+                <Bar dataKey="fichas" fill="var(--brand)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </Card>
+          )}
+
+          {incluirTabla && (
+            <Card className="flex flex-col overflow-hidden">
+              <div className="border-b border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <h3 className="font-bold text-slate-900 dark:text-white">Resumen por CEBA</h3>
+              </div>
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-slate-100 text-xs text-slate-400 dark:border-slate-800">
+                    <th className="px-4 py-2 font-medium">CEBA</th>
+                    <th className="px-4 py-2 text-center font-medium">Fichas</th>
+                    <th className="px-4 py-2 font-medium">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {porCeba.map(({ ceba, total, estado }) => (
+                    <EstadoRow key={ceba.id} nombre={ceba.nombre} total={total} estado={estado} seleccionada={false} onClick={() => {}} />
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );
