@@ -77,7 +77,7 @@ export function AdminLayout({ profile }: { profile: Profile }) {
       <aside
         className={cn(
           "safe-top safe-bottom fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-800 bg-slate-950 text-slate-200 transition-all duration-300 ease-out",
-          sidebarCollapsed ? "w-[72px]" : "w-[232px]",
+          sidebarCollapsed ? "w-[4.5rem]" : "w-[14.5rem]",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
@@ -87,7 +87,7 @@ export function AdminLayout({ profile }: { profile: Profile }) {
             {!sidebarCollapsed && (
               <div className="min-w-0">
                 <p className="truncate text-sm font-black tracking-wide text-white">UGEL 06</p>
-                <p className="truncate text-[11px] text-slate-400">Monitoreo CEBA</p>
+                <p className="truncate text-[0.6875rem] text-slate-400">Monitoreo CEBA</p>
               </div>
             )}
           </Link>
@@ -99,7 +99,7 @@ export function AdminLayout({ profile }: { profile: Profile }) {
           {navGroups.map((group) => (
             <div key={group.label}>
               {!sidebarCollapsed && (
-                <p className="mb-1.5 px-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{group.label}</p>
+                <p className="mb-1.5 px-2.5 text-[0.625rem] font-bold uppercase tracking-[0.18em] text-slate-500">{group.label}</p>
               )}
               <div className="space-y-0.5">
                 {group.items.map(({ label, href, icon: Icon, end }) => (
@@ -111,7 +111,7 @@ export function AdminLayout({ profile }: { profile: Profile }) {
                     onClick={() => setMobileOpen(false)}
                     className={({ isActive }) =>
                       cn(
-                        "group flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-all duration-150",
+                        "group flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[0.8125rem] font-medium transition-all duration-150",
                         isActive
                           ? "bg-[var(--brand)] text-white shadow-md shadow-black/30"
                           : "text-slate-400 hover:bg-slate-900 hover:text-white hover:pl-3",
@@ -131,7 +131,7 @@ export function AdminLayout({ profile }: { profile: Profile }) {
           <button
             onClick={() => setSidebarCollapsed((value) => !value)}
             aria-label={sidebarCollapsed ? "Expandir menú" : "Contraer menú"}
-            className="hidden h-9 w-full items-center justify-center gap-2 rounded-lg text-[13px] text-slate-400 transition-colors hover:bg-slate-900 hover:text-white lg:flex"
+            className="hidden h-9 w-full items-center justify-center gap-2 rounded-lg text-[0.8125rem] text-slate-400 transition-colors hover:bg-slate-900 hover:text-white lg:flex"
           >
             {sidebarCollapsed ? (
               <PanelLeftOpen className="size-4" />
@@ -145,7 +145,7 @@ export function AdminLayout({ profile }: { profile: Profile }) {
         </div>
       </aside>
 
-      <div className={cn("min-h-screen min-w-0 transition-all duration-300", sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[232px]")}>
+      <div className={cn("min-h-screen min-w-0 transition-all duration-300", sidebarCollapsed ? "lg:pl-[4.5rem]" : "lg:pl-[14.5rem]")}>
         <header className="safe-top sticky top-0 z-30 flex h-14 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/85 sm:px-6">
           <button aria-label="Abrir menú" className="mr-3 rounded-xl p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden" onClick={() => setMobileOpen(true)}>
             <Menu className="size-5" />
@@ -156,19 +156,19 @@ export function AdminLayout({ profile }: { profile: Profile }) {
               onClick={toggleTheme}
               aria-label="Cambiar tema"
             >
-              {theme === "dark" ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
+              {theme === "dark" ? <Sun className="size-[1.125rem]" /> : <Moon className="size-[1.125rem]" />}
             </button>
             <button className="relative grid size-9 place-items-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
-              <Bell className="size-[18px]" />
+              <Bell className="size-[1.125rem]" />
             </button>
             <div className="ml-1 flex items-center gap-2.5 border-l border-slate-200 pl-3 dark:border-slate-800">
               <div className="hidden text-right sm:block">
-                <p className="text-[13px] font-semibold text-slate-900 dark:text-white">{displayName}</p>
-                <button onClick={() => supabase.auth.signOut()} className="text-[11px] text-slate-500 transition-colors hover:text-[var(--brand)] dark:text-slate-400">
+                <p className="text-[0.8125rem] font-semibold text-slate-900 dark:text-white">{displayName}</p>
+                <button onClick={() => supabase.auth.signOut()} className="text-[0.6875rem] text-slate-500 transition-colors hover:text-[var(--brand)] dark:text-slate-400">
                   {ROL_LABEL[profile.role]} · Salir
                 </button>
               </div>
-              <div className="grid size-9 place-items-center rounded-xl bg-teal-100 text-[13px] font-bold text-teal-800 ring-2 ring-white dark:bg-teal-950 dark:text-teal-300 dark:ring-slate-950">
+              <div className="grid size-9 place-items-center rounded-xl bg-teal-100 text-[0.8125rem] font-bold text-teal-800 ring-2 ring-white dark:bg-teal-950 dark:text-teal-300 dark:ring-slate-950">
                 {initials}
               </div>
             </div>
