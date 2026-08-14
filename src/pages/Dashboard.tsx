@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [exportando, setExportando] = useState(false);
   const [incluirKpis, setIncluirKpis] = useState(true);
   const [incluirGrafico, setIncluirGrafico] = useState(true);
+  const [graficoExport, setGraficoExport] = useState<"actual" | "ceba" | "ambos">("actual");
   const [incluirTabla, setIncluirTabla] = useState(true);
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);
@@ -78,21 +79,30 @@ export default function Dashboard() {
     return { recibidos, observados, cebasSinFicha, avance };
   }, [fichasEnfoque, porCeba, cebas.length]);
 
-  const chartData = useMemo(() => {
-    if (cebaActiva) {
-      return monitoreos
+  const chartDataPorCeba = useMemo(() => porCeba.map((c) => ({ nombre: c.ceba.codigo, fichas: c.total })).sort((a, b) => b.fichas - a.fichas), [porCeba]);
+
+  const chartDataPorMonitoreo = useMemo(
+    () =>
+      monitoreos
         .map((m) => ({ nombre: m.codigo, fichas: fichasEnfoque.filter((f) => f.monitoreo_id === m.id).length }))
-        .filter((d) => d.fichas > 0 || monitoreos.length <= 15);
-    }
-    return porCeba.map((c) => ({ nombre: c.ceba.codigo, fichas: c.total })).sort((a, b) => b.fichas - a.fichas);
-  }, [cebaActiva, monitoreos, fichasEnfoque, porCeba]);
+        .filter((d) => d.fichas > 0 || monitoreos.length <= 15),
+    [monitoreos, fichasEnfoque]
+  );
+
+  const chartData = cebaActiva ? chartDataPorMonitoreo : chartDataPorCeba;
 
   async function descargarImagen() {
     if (!exportRef.current) return;
     setExportando(true);
     try {
-      const dataUrl = await toPng(exportRef.current, {
+      // Esperar un frame para que el layout de las secciones recién
+      // (des)marcadas ya esté pintado antes de capturar.
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const nodo = exportRef.current;
+      const dataUrl = await toPng(nodo, {
         pixelRatio: 3,
+        width: nodo.scrollWidth,
+        height: nodo.scrollHeight,
         backgroundColor: document.documentElement.classList.contains("dark") ? "#0f172a" : "#ffffff",
         cacheBust: true,
       });
@@ -236,10 +246,21 @@ export default function Dashboard() {
                 <input type="checkbox" checked={incluirKpis} onChange={(e) => setIncluirKpis(e.target.checked)} className="size-4 accent-[var(--brand)]" />
                 Tarjetas resumen (KPIs)
               </label>
-              <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-slate-200 p-3 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-                <input type="checkbox" checked={incluirGrafico} onChange={(e) => setIncluirGrafico(e.target.checked)} className="size-4 accent-[var(--brand)]" />
-                Gráfico de fichas
-              </label>
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700">
+                <label className="flex cursor-pointer items-center gap-2.5 p-3 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800">
+                  <input type="checkbox" checked={incluirGrafico} onChange={(e) => setIncluirGrafico(e.target.checked)} className="size-4 accent-[var(--brand)]" />
+                  Gráfico de fichas
+                </label>
+                {incluirGrafico && cebaActiva && (
+                  <div className="border-t border-slate-200 p-3 pt-2.5 dark:border-slate-700">
+                    <Select value={graficoExport} onChange={(e) => setGraficoExport(e.target.value as typeof graficoExport)} className="w-full text-sm">
+                      <option value="actual">Por monitoreo de {cebaActiva.codigo} (el que ves en pantalla)</option>
+                      <option value="ceba">Comparar todas las CEBA</option>
+                      <option value="ambos">Ambos gráficos</option>
+                    </Select>
+                  </div>
+                )}
+              </div>
               <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-slate-200 p-3 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 <input type="checkbox" checked={incluirTabla} onChange={(e) => setIncluirTabla(e.target.checked)} className="size-4 accent-[var(--brand)]" />
                 Tabla resumen por CEBA
@@ -298,18 +319,15 @@ export default function Dashboard() {
             </div>
           )}
 
-          {incluirGrafico && (
-            <Card className="flex flex-col p-5">
-              <h3 className="mb-4 font-bold text-slate-900 dark:text-white">
-                {cebaActiva ? `Fichas de ${cebaActiva.codigo} por monitoreo` : "Fichas subidas por CEBA"}
-              </h3>
-              <BarChart width={1000} height={280} data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
-                <XAxis dataKey="nombre" tick={{ fontSize: 11, fill: "var(--chart-text)" }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--chart-text)" }} />
-                <Bar dataKey="fichas" fill="var(--brand)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </Card>
+          {incluirGrafico && (!cebaActiva || graficoExport === "actual" || graficoExport === "ambos") && (
+            <GraficoExport
+              titulo={cebaActiva ? `Fichas de ${cebaActiva.codigo} por monitoreo` : "Fichas subidas por CEBA"}
+              data={cebaActiva ? chartDataPorMonitoreo : chartDataPorCeba}
+            />
+          )}
+
+          {incluirGrafico && cebaActiva && (graficoExport === "ceba" || graficoExport === "ambos") && (
+            <GraficoExport titulo="Fichas subidas por CEBA (todas)" data={chartDataPorCeba} />
           )}
 
           {incluirTabla && (
@@ -317,20 +335,21 @@ export default function Dashboard() {
               <div className="border-b border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
                 <h3 className="font-bold text-slate-900 dark:text-white">Resumen por CEBA</h3>
               </div>
-              <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-slate-100 text-xs text-slate-400 dark:border-slate-800">
-                    <th className="px-4 py-2 font-medium">CEBA</th>
-                    <th className="px-4 py-2 text-center font-medium">Fichas</th>
-                    <th className="px-4 py-2 font-medium">Estado</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {porCeba.map(({ ceba, total, estado }) => (
-                    <EstadoRow key={ceba.id} nombre={ceba.nombre} total={total} estado={estado} seleccionada={false} onClick={() => {}} />
-                  ))}
-                </tbody>
-              </table>
+              <div className="grid grid-cols-[1fr_100px_140px] gap-x-4 border-b border-slate-100 px-4 py-2 text-xs font-medium text-slate-400 dark:border-slate-800">
+                <span>CEBA</span>
+                <span className="text-center">Fichas</span>
+                <span>Estado</span>
+              </div>
+              {porCeba.map(({ ceba, total, estado }) => (
+                <div key={ceba.id} className="grid grid-cols-[1fr_100px_140px] items-center gap-x-4 border-b border-slate-100 px-4 py-2.5 text-sm dark:border-slate-800">
+                  <span className="font-medium text-slate-800 dark:text-slate-200">{ceba.nombre}</span>
+                  <span className="text-center tabular-nums text-slate-500 dark:text-slate-400">{total}</span>
+                  <span className="flex items-center gap-2">
+                    <span className={`size-2.5 rounded-full ${ESTADO_DOT[estado]}`} />
+                    <span className={`text-[11px] font-medium uppercase ${estado === "Observado" ? "text-rose-600" : "text-slate-500 dark:text-slate-400"}`}>{ESTADO_LABEL[estado]}</span>
+                  </span>
+                </div>
+              ))}
             </Card>
           )}
         </div>
@@ -364,6 +383,20 @@ function KpiCard({
         <div className="text-3xl font-bold tabular-nums text-slate-900 dark:text-white">{value}</div>
         <div className={`mt-1 text-xs ${subClass ?? "text-slate-500 dark:text-slate-400"}`}>{sub}</div>
       </div>
+    </Card>
+  );
+}
+
+function GraficoExport({ titulo, data }: { titulo: string; data: { nombre: string; fichas: number }[] }) {
+  return (
+    <Card className="flex flex-col p-5">
+      <h3 className="mb-4 font-bold text-slate-900 dark:text-white">{titulo}</h3>
+      <BarChart width={1000} height={280} data={data}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+        <XAxis dataKey="nombre" tick={{ fontSize: 11, fill: "var(--chart-text)" }} />
+        <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--chart-text)" }} />
+        <Bar dataKey="fichas" fill="var(--brand)" radius={[4, 4, 0, 0]} />
+      </BarChart>
     </Card>
   );
 }
