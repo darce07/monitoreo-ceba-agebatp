@@ -175,7 +175,9 @@ export function AdminLayout({ profile }: { profile: Profile }) {
           </div>
         </header>
         <main className="animate-fade-in min-w-0 overflow-x-hidden px-3 py-4 sm:px-6 sm:py-5 lg:px-8" key={location.pathname}>
-          <Outlet context={profile} />
+          <div className="mx-auto w-full max-w-[1680px]">
+            <Outlet context={profile} />
+          </div>
         </main>
       </div>
     </div>
