@@ -382,7 +382,7 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
                 {f.estado === "Observado" && f.observaciones && <p className="mt-1 text-xs text-rose-600">Observación: {f.observaciones}</p>}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => verFicha(f.storage_path)} className="rounded-lg p-1.5 text-[var(--brand)] hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver documento">
+                <button onClick={() => verFicha(f.storage_path)} className="rounded-lg p-1.5 text-teal-700 transition-colors hover:bg-teal-50 dark:text-teal-400 dark:hover:bg-teal-950" title="Ver documento">
                   <Eye className="size-[18px]" />
                 </button>
                 <button onClick={async () => setLoadError((await abrirFichaPdf(f.storage_path, true)) ?? null)} className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar">

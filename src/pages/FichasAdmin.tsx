@@ -236,7 +236,7 @@ export default function FichasAdmin() {
                     <td className="px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200">{f.n_monitoreo}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
-                        <button onClick={() => verFicha(f.storage_path)} className="rounded p-1 text-[var(--brand)] transition-colors hover:bg-teal-50 dark:hover:bg-teal-950" title="Ver PDF">
+                        <button onClick={() => verFicha(f.storage_path)} className="rounded p-1 text-teal-700 transition-colors hover:bg-teal-50 dark:text-teal-400 dark:hover:bg-teal-950" title="Ver PDF">
                           <Eye className="size-[18px]" />
                         </button>
                         <button onClick={async () => setError((await abrirFichaPdf(f.storage_path, true)) ?? null)} className="rounded p-1 text-slate-500 transition-colors hover:bg-teal-50 hover:text-[var(--brand)] dark:hover:bg-teal-950" title="Descargar PDF">
