@@ -38,7 +38,7 @@ export default function Login() {
             <div className="mx-auto mb-4 grid size-16 place-items-center rounded-full bg-[var(--brand)] text-lg font-black text-white shadow-lg shadow-teal-900/20">
               U6
             </div>
-            <h1 className="font-serif text-xl font-bold text-slate-950 dark:text-white">Monitoreo CEBA</h1>
+            <h1 className="text-xl font-bold text-slate-950 dark:text-white">Monitoreo CEBA</h1>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Plataforma de Monitoreo Pedagógico UGEL 06</p>
           </div>
 

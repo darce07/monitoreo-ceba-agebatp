@@ -356,7 +356,7 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
 
       <section className="mt-2">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="font-serif text-lg font-bold text-slate-950 dark:text-white">Mis Fichas</h2>
+          <h2 className="text-lg font-bold text-slate-950 dark:text-white">Mis Fichas</h2>
         </div>
         <div className="relative mb-3">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />

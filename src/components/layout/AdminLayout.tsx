@@ -82,7 +82,7 @@ export function AdminLayout({ profile }: { profile: Profile }) {
             <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--brand)] font-black text-white shadow-lg shadow-teal-950/40">U6</div>
             {!sidebarCollapsed && (
               <div className="min-w-0">
-                <p className="truncate font-serif text-base font-black tracking-wide text-white">UGEL 06</p>
+                <p className="truncate text-base font-black tracking-wide text-white">UGEL 06</p>
                 <p className="truncate text-xs text-slate-400">Monitoreo CEBA</p>
               </div>
             )}
