@@ -13,7 +13,8 @@ export default function Dashboard() {
   const [exportando, setExportando] = useState(false);
   const [incluirKpis, setIncluirKpis] = useState(true);
   const [incluirGrafico, setIncluirGrafico] = useState(true);
-  const [graficoExport, setGraficoExport] = useState<"actual" | "ceba" | "ambos">("actual");
+  const [todasCebasGrafico, setTodasCebasGrafico] = useState(true);
+  const [cebasGrafico, setCebasGrafico] = useState<string[]>([]);
   const [incluirTabla, setIncluirTabla] = useState(true);
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);
@@ -90,6 +91,15 @@ export default function Dashboard() {
   );
 
   const chartData = cebaActiva ? chartDataPorMonitoreo : chartDataPorCeba;
+
+  const chartDataExport = useMemo(() => {
+    const base = todasCebasGrafico ? porCeba : porCeba.filter((c) => cebasGrafico.includes(c.ceba.id));
+    return base.map((c) => ({ nombre: c.ceba.codigo, fichas: c.total })).sort((a, b) => b.fichas - a.fichas);
+  }, [porCeba, todasCebasGrafico, cebasGrafico]);
+
+  function alternarCebaGrafico(id: string) {
+    setCebasGrafico((actuales) => (actuales.includes(id) ? actuales.filter((c) => c !== id) : [...actuales, id]));
+  }
 
   async function descargarImagen() {
     if (!exportRef.current) return;
@@ -238,7 +248,7 @@ export default function Dashboard() {
 
       {exportAbierto && (
         <div className="animate-fade-in fixed inset-0 z-[100] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={() => !exportando && setExportAbierto(false)}>
-          <Card className="animate-scale-in w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+          <Card className="animate-scale-in w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-1 text-lg font-bold text-slate-900 dark:text-white">Descargar imagen del dashboard</h3>
             <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">Elegí qué secciones incluir en la imagen (alta resolución, PNG).</p>
             <div className="space-y-2.5">
@@ -251,13 +261,23 @@ export default function Dashboard() {
                   <input type="checkbox" checked={incluirGrafico} onChange={(e) => setIncluirGrafico(e.target.checked)} className="size-4 accent-[var(--brand)]" />
                   Gráfico de fichas
                 </label>
-                {incluirGrafico && cebaActiva && (
+                {incluirGrafico && (
                   <div className="border-t border-slate-200 p-3 pt-2.5 dark:border-slate-700">
-                    <Select value={graficoExport} onChange={(e) => setGraficoExport(e.target.value as typeof graficoExport)} className="w-full text-sm">
-                      <option value="actual">Por monitoreo de {cebaActiva.codigo} (el que ves en pantalla)</option>
-                      <option value="ceba">Comparar todas las CEBA</option>
-                      <option value="ambos">Ambos gráficos</option>
-                    </Select>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">CEBA a cruzar en el gráfico</p>
+                    <label className="flex cursor-pointer items-center gap-2 py-1 text-sm text-slate-700 dark:text-slate-300">
+                      <input type="checkbox" checked={todasCebasGrafico} onChange={(e) => setTodasCebasGrafico(e.target.checked)} className="size-4 accent-[var(--brand)]" />
+                      Todas las CEBA
+                    </label>
+                    {!todasCebasGrafico && (
+                      <div className="mt-1.5 max-h-40 space-y-0.5 overflow-y-auto rounded-lg border border-slate-100 p-2 dark:border-slate-800">
+                        {cebas.map((c) => (
+                          <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800">
+                            <input type="checkbox" checked={cebasGrafico.includes(c.id)} onChange={() => alternarCebaGrafico(c.id)} className="size-4 accent-[var(--brand)]" />
+                            {c.codigo} · {c.nombre}
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -270,7 +290,11 @@ export default function Dashboard() {
               <Button variant="secondary" onClick={() => setExportAbierto(false)} disabled={exportando}>
                 Cancelar
               </Button>
-              <Button loading={exportando} disabled={!incluirKpis && !incluirGrafico && !incluirTabla} onClick={descargarImagen}>
+              <Button
+                loading={exportando}
+                disabled={(!incluirKpis && !incluirGrafico && !incluirTabla) || (incluirGrafico && !todasCebasGrafico && cebasGrafico.length === 0)}
+                onClick={descargarImagen}
+              >
                 <Download className="size-4" /> Descargar
               </Button>
             </div>
@@ -319,15 +343,11 @@ export default function Dashboard() {
             </div>
           )}
 
-          {incluirGrafico && (!cebaActiva || graficoExport === "actual" || graficoExport === "ambos") && (
+          {incluirGrafico && (
             <GraficoExport
-              titulo={cebaActiva ? `Fichas de ${cebaActiva.codigo} por monitoreo` : "Fichas subidas por CEBA"}
-              data={cebaActiva ? chartDataPorMonitoreo : chartDataPorCeba}
+              titulo={todasCebasGrafico ? "Fichas subidas por CEBA (todas)" : `Fichas subidas — ${cebasGrafico.length} CEBA seleccionada(s)`}
+              data={chartDataExport}
             />
-          )}
-
-          {incluirGrafico && cebaActiva && (graficoExport === "ceba" || graficoExport === "ambos") && (
-            <GraficoExport titulo="Fichas subidas por CEBA (todas)" data={chartDataPorCeba} />
           )}
 
           {incluirTabla && (
