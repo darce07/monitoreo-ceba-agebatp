@@ -8,10 +8,6 @@
   background: #f8fafc;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  /* Toda la escala de Tailwind (padding, gaps, texto, radios) esta en rem,
-     asi que achicar la base equivale visualmente a un zoom del navegador
-     al 75% mas prolijo, sin depender de que el usuario zoomee manualmente. */
-  font-size: 87.5%;
   --brand: #0f766e;
   --chart-grid: #e2e8f0;
   --chart-text: #64748b;
@@ -28,6 +24,18 @@
   --chart-tooltip-border: #334155;
   --chart-tooltip-text: #f1f5f9;
   --table-scroll-bg: #0f172a;
+}
+
+/* Toda la escala de Tailwind (padding, gaps, texto, radios) esta en rem,
+   asi que achicar el font-size base equivale a un zoom mas prolijo que
+   depender de que el usuario zoomee el navegador. Se aplica SOLO por
+   debajo de 1600px (laptops chicas tipo 14", donde 1366-1536px de ancho
+   logico hacen que todo se sienta grande) para no afectar monitores de
+   escritorio mas anchos, que ya se ven bien a escala 100%. */
+@media (min-width: 768px) and (max-width: 1600px) {
+  :root {
+    font-size: 75%;
+  }
 }
 
 * {
