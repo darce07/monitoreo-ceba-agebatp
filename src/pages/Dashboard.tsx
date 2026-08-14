@@ -200,8 +200,8 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <Card className="flex flex-col p-5 xl:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Card className="flex flex-col p-5 lg:col-span-2">
           <h3 className="mb-4 font-bold text-slate-900 dark:text-white">
             {cebaActiva ? `Fichas de ${cebaActiva.codigo} por monitoreo` : "Fichas subidas por CEBA"}
           </h3>
@@ -216,7 +216,7 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </Card>
 
-        <Card className="flex flex-col overflow-hidden xl:col-span-1">
+        <Card className="flex flex-col overflow-hidden lg:col-span-1">
           <div className="border-b border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
             <h3 className="font-bold text-slate-900 dark:text-white">Resumen por CEBA</h3>
           </div>
