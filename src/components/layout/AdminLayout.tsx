@@ -77,17 +77,17 @@ export function AdminLayout({ profile }: { profile: Profile }) {
       <aside
         className={cn(
           "safe-top safe-bottom fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-800 bg-slate-950 text-slate-200 transition-all duration-300 ease-out",
-          sidebarCollapsed ? "w-[84px]" : "w-[272px]",
+          sidebarCollapsed ? "w-[72px]" : "w-[232px]",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
-        <div className="flex h-20 items-center gap-3 border-b border-slate-800 px-5">
-          <Link to="/" className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--brand)] font-black text-white shadow-lg shadow-teal-950/40">U6</div>
+        <div className="flex h-14 items-center gap-2.5 border-b border-slate-800 px-4">
+          <Link to="/" className="flex min-w-0 flex-1 items-center gap-2.5">
+            <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--brand)] text-sm font-black text-white shadow-lg shadow-teal-950/40">U6</div>
             {!sidebarCollapsed && (
               <div className="min-w-0">
-                <p className="truncate text-base font-black tracking-wide text-white">UGEL 06</p>
-                <p className="truncate text-xs text-slate-400">Monitoreo CEBA</p>
+                <p className="truncate text-sm font-black tracking-wide text-white">UGEL 06</p>
+                <p className="truncate text-[11px] text-slate-400">Monitoreo CEBA</p>
               </div>
             )}
           </Link>
@@ -95,13 +95,13 @@ export function AdminLayout({ profile }: { profile: Profile }) {
             <X className="size-5" />
           </button>
         </div>
-        <nav className="scrollbar-thin flex-1 space-y-6 overflow-y-auto px-3 py-5">
+        <nav className="scrollbar-thin flex-1 space-y-5 overflow-y-auto px-2.5 py-4">
           {navGroups.map((group) => (
             <div key={group.label}>
               {!sidebarCollapsed && (
-                <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{group.label}</p>
+                <p className="mb-1.5 px-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{group.label}</p>
               )}
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {group.items.map(({ label, href, icon: Icon, end }) => (
                   <NavLink
                     key={href}
@@ -111,15 +111,15 @@ export function AdminLayout({ profile }: { profile: Profile }) {
                     onClick={() => setMobileOpen(false)}
                     className={({ isActive }) =>
                       cn(
-                        "group flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all duration-150",
+                        "group flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-all duration-150",
                         isActive
                           ? "bg-[var(--brand)] text-white shadow-md shadow-black/30"
-                          : "text-slate-400 hover:bg-slate-900 hover:text-white hover:pl-3.5",
+                          : "text-slate-400 hover:bg-slate-900 hover:text-white hover:pl-3",
                         sidebarCollapsed && "justify-center px-0 hover:pl-0",
                       )
                     }
                   >
-                    <Icon className="size-[18px] shrink-0" />
+                    <Icon className="size-4 shrink-0" />
                     {!sidebarCollapsed && <span className="truncate">{label}</span>}
                   </NavLink>
                 ))}
@@ -127,17 +127,17 @@ export function AdminLayout({ profile }: { profile: Profile }) {
             </div>
           ))}
         </nav>
-        <div className="border-t border-slate-800 p-3">
+        <div className="border-t border-slate-800 p-2.5">
           <button
             onClick={() => setSidebarCollapsed((value) => !value)}
             aria-label={sidebarCollapsed ? "Expandir menú" : "Contraer menú"}
-            className="hidden h-10 w-full items-center justify-center gap-2 rounded-xl text-sm text-slate-400 transition-colors hover:bg-slate-900 hover:text-white lg:flex"
+            className="hidden h-9 w-full items-center justify-center gap-2 rounded-lg text-[13px] text-slate-400 transition-colors hover:bg-slate-900 hover:text-white lg:flex"
           >
             {sidebarCollapsed ? (
-              <PanelLeftOpen className="size-5" />
+              <PanelLeftOpen className="size-4" />
             ) : (
               <>
-                <PanelLeftClose className="size-5" />
+                <PanelLeftClose className="size-4" />
                 <span>Contraer menú</span>
               </>
             )}
@@ -145,30 +145,30 @@ export function AdminLayout({ profile }: { profile: Profile }) {
         </div>
       </aside>
 
-      <div className={cn("min-h-screen min-w-0 transition-all duration-300", sidebarCollapsed ? "lg:pl-[84px]" : "lg:pl-[272px]")}>
-        <header className="safe-top sticky top-0 z-30 flex h-20 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/85 sm:px-6">
+      <div className={cn("min-h-screen min-w-0 transition-all duration-300", sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[232px]")}>
+        <header className="safe-top sticky top-0 z-30 flex h-14 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/85 sm:px-6">
           <button aria-label="Abrir menú" className="mr-3 rounded-xl p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden" onClick={() => setMobileOpen(true)}>
             <Menu className="size-5" />
           </button>
-          <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
             <button
-              className="grid size-10 place-items-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="grid size-9 place-items-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
               onClick={toggleTheme}
               aria-label="Cambiar tema"
             >
-              {theme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}
+              {theme === "dark" ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
             </button>
-            <button className="relative grid size-10 place-items-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
-              <Bell className="size-5" />
+            <button className="relative grid size-9 place-items-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+              <Bell className="size-[18px]" />
             </button>
-            <div className="ml-1 flex items-center gap-3 border-l border-slate-200 pl-3 dark:border-slate-800">
+            <div className="ml-1 flex items-center gap-2.5 border-l border-slate-200 pl-3 dark:border-slate-800">
               <div className="hidden text-right sm:block">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{displayName}</p>
-                <button onClick={() => supabase.auth.signOut()} className="text-xs text-slate-500 transition-colors hover:text-[var(--brand)] dark:text-slate-400">
+                <p className="text-[13px] font-semibold text-slate-900 dark:text-white">{displayName}</p>
+                <button onClick={() => supabase.auth.signOut()} className="text-[11px] text-slate-500 transition-colors hover:text-[var(--brand)] dark:text-slate-400">
                   {ROL_LABEL[profile.role]} · Salir
                 </button>
               </div>
-              <div className="grid size-10 place-items-center rounded-xl bg-teal-100 text-sm font-bold text-teal-800 ring-2 ring-white dark:bg-teal-950 dark:text-teal-300 dark:ring-slate-950">
+              <div className="grid size-9 place-items-center rounded-xl bg-teal-100 text-[13px] font-bold text-teal-800 ring-2 ring-white dark:bg-teal-950 dark:text-teal-300 dark:ring-slate-950">
                 {initials}
               </div>
             </div>
