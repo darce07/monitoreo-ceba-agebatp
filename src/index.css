@@ -8,6 +8,10 @@
   background: #f8fafc;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  /* Toda la escala de Tailwind (padding, gaps, texto, radios) esta en rem,
+     asi que achicar la base equivale visualmente a un zoom del navegador
+     al 75% mas prolijo, sin depender de que el usuario zoomee manualmente. */
+  font-size: 87.5%;
   --brand: #0f766e;
   --chart-grid: #e2e8f0;
   --chart-text: #64748b;
