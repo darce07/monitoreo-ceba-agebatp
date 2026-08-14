@@ -126,12 +126,15 @@ export default function FichasAdmin() {
 
       {error && <Alert variant="error">{error}</Alert>}
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-        <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por título, nombre de archivo o docente..." className="w-full pl-9" />
+      <Card className="flex flex-col overflow-hidden">
+      <div className="border-b border-slate-100 p-4 dark:border-slate-800">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por título, nombre de archivo o docente..." className="w-full pl-9" />
+        </div>
       </div>
 
-      <Card className="flex flex-col gap-4 p-4 xl:flex-row xl:flex-wrap xl:items-end">
+      <div className="flex flex-col gap-4 border-b border-slate-100 p-4 dark:border-slate-800 xl:flex-row xl:flex-wrap xl:items-end">
         {profile.role !== "director" && (
           <Field label="CEBA / Director" className="min-w-[200px] flex-1">
             <Select value={filtroCeba} onChange={(e) => aplicarFiltro(setFiltroCeba, e.target.value)} className="w-full">
@@ -181,10 +184,10 @@ export default function FichasAdmin() {
           Más filtros
           {(filtroDocente || filtroDesde || filtroHasta) && <span className="ml-1 size-1.5 rounded-full bg-emerald-500" />}
         </Button>
-      </Card>
+      </div>
 
       {mostrarMasFiltros && (
-        <Card className="animate-slide-up flex flex-col gap-4 p-4 xl:flex-row xl:flex-wrap xl:items-end">
+        <div className="animate-slide-up flex flex-col gap-4 border-b border-slate-100 p-4 dark:border-slate-800 xl:flex-row xl:flex-wrap xl:items-end">
           <Field label="Docente" className="min-w-[200px] flex-1">
             <Select value={filtroDocente} onChange={(e) => aplicarFiltro(setFiltroDocente, e.target.value)} className="w-full">
               <option value="">Todos los docentes</option>
@@ -201,13 +204,15 @@ export default function FichasAdmin() {
           <Field label="Hasta">
             <Input type="date" value={filtroHasta} onChange={(e) => aplicarFiltro(setFiltroHasta, e.target.value)} />
           </Field>
-        </Card>
+        </div>
       )}
 
       {fichasPagina.length === 0 ? (
-        <EmptyState icon={<FileText className="size-6" />} title="Sin resultados" description="No hay fichas que coincidan con el filtro." />
+        <div className="p-4">
+          <EmptyState icon={<FileText className="size-6" />} title="Sin resultados" description="No hay fichas que coincidan con el filtro." />
+        </div>
       ) : (
-        <Card className="flex flex-col overflow-hidden">
+        <>
           <div className="table-scroll">
             <table className="w-full border-collapse whitespace-nowrap text-left">
               <thead>
@@ -232,7 +237,7 @@ export default function FichasAdmin() {
                     )}
                     <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-200">{f.docente}</td>
                     <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{f.area}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{f.fecha_monitoreo}</td>
+                    <td className="px-4 py-3 text-sm tabular-nums text-slate-500 dark:text-slate-400">{f.fecha_monitoreo}</td>
                     <td className="px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200">{f.n_monitoreo}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
@@ -273,7 +278,7 @@ export default function FichasAdmin() {
             </table>
           </div>
           <div className="mt-auto flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/50">
-            <span className="text-sm text-slate-500 dark:text-slate-400">
+            <span className="text-sm tabular-nums text-slate-500 dark:text-slate-400">
               Mostrando {fichasFiltradas.length === 0 ? 0 : (pageClamped - 1) * PAGE_SIZE + 1}
               {"–"}
               {Math.min(pageClamped * PAGE_SIZE, fichasFiltradas.length)} de {fichasFiltradas.length}
@@ -300,8 +305,9 @@ export default function FichasAdmin() {
               </div>
             </div>
           </div>
-        </Card>
+        </>
       )}
+      </Card>
 
       {panelFicha && (
         <EditPanel

@@ -261,7 +261,7 @@ function EstadoRow({
           {nombre}
         </div>
       </td>
-      <td className="px-4 py-3 text-center text-slate-500 dark:text-slate-400">{total}</td>
+      <td className="px-4 py-3 text-center tabular-nums text-slate-500 dark:text-slate-400">{total}</td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           <div className={`size-2.5 rounded-full ${ESTADO_DOT[estado]}`} />

@@ -149,25 +149,25 @@ export default function Docentes() {
 
       {error && <Alert variant="error">{error}</Alert>}
 
-      <Card className="flex flex-col items-center justify-between gap-3 p-3 sm:flex-row">
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-          <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar docente por nombre..." className="pl-9" />
+      <Card className="overflow-hidden">
+        <div className="flex flex-col items-center justify-between gap-3 border-b border-slate-100 p-3 dark:border-slate-800 sm:flex-row">
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar docente por nombre..." className="pl-9" />
+          </div>
+          <Select value={filtroCeba} onChange={(e) => setFiltroCeba(e.target.value)} className="w-full sm:w-56">
+            <option value="">Todas las CEBA</option>
+            {cebas.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.codigo} · {c.nombre}
+              </option>
+            ))}
+          </Select>
         </div>
-        <Select value={filtroCeba} onChange={(e) => setFiltroCeba(e.target.value)} className="w-full sm:w-56">
-          <option value="">Todas las CEBA</option>
-          {cebas.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.codigo} · {c.nombre}
-            </option>
-          ))}
-        </Select>
-      </Card>
 
-      {docentesFiltrados.length === 0 ? (
-        <EmptyState icon={<Users className="size-6" />} title="Sin docentes" description="No hay docentes registrados todavía." />
-      ) : (
-        <Card className="overflow-hidden">
+        {docentesFiltrados.length === 0 ? (
+          <EmptyState icon={<Users className="size-6" />} title="Sin docentes" description="No hay docentes registrados todavía." />
+        ) : (
           <div className="table-scroll">
             <table className="w-full border-collapse whitespace-nowrap text-left">
               <thead>
@@ -195,11 +195,11 @@ export default function Docentes() {
                       <td className="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">
                         {cebaById[d.ceba_id]?.codigo} · {cebaById[d.ceba_id]?.nombre}
                       </td>
-                      <td className="px-4 py-2 text-center text-sm font-medium text-slate-800 dark:text-slate-200">{conteoPorDocente.get(d.id) ?? 0}</td>
+                      <td className="px-4 py-2 text-center text-sm font-medium tabular-nums text-slate-800 dark:text-slate-200">{conteoPorDocente.get(d.id) ?? 0}</td>
                       <td className="px-4 py-2">
                         {ultima ? (
                           <>
-                            <div className="text-sm text-slate-800 dark:text-slate-200">{ultima.fecha_monitoreo}</div>
+                            <div className="text-sm tabular-nums text-slate-800 dark:text-slate-200">{ultima.fecha_monitoreo}</div>
                             <div className={`text-xs ${ultima.estado === "Observado" ? "text-rose-600" : "text-teal-600"}`}>Estado: {ultima.estado}</div>
                           </>
                         ) : (
@@ -230,8 +230,8 @@ export default function Docentes() {
               </tbody>
             </table>
           </div>
-        </Card>
-      )}
+        )}
+      </Card>
 
       {editando && (
         <div className="animate-fade-in fixed inset-0 z-[100] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={() => setEditando(null)}>
