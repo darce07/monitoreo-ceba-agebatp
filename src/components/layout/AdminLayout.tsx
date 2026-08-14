@@ -47,11 +47,7 @@ const ROL_LABEL: Record<Profile["role"], string> = {
 
 export function AdminLayout({ profile }: { profile: Profile }) {
   const location = useLocation();
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    const guardado = localStorage.getItem("theme");
-    if (guardado === "dark" || guardado === "light") return guardado;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  });
+  const [theme, setTheme] = useState<"light" | "dark">(() => (localStorage.getItem("theme") === "dark" ? "dark" : "light"));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const displayName = profile.nombre ?? "Especialista";
