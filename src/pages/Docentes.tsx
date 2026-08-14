@@ -5,6 +5,7 @@ import { supabase, type Ceba, type Docente, type Ficha, type Profile } from "../
 import { Card, Select, Input, Alert, Button, PageHeader, EmptyState, Skeleton } from "../components/ui";
 import { Field } from "../components/form-field";
 import { ConfirmDialog } from "../components/confirm-dialog";
+import { useToast } from "../components/toast";
 
 const AVATAR_TONES = [
   "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300",
@@ -19,6 +20,7 @@ function iniciales(nombre: string) {
 
 export default function Docentes() {
   const profile = useOutletContext<Profile>();
+  const toast = useToast();
   const puedeEditar = profile.role === "director";
   const [docentes, setDocentes] = useState<Docente[]>([]);
   const [cebas, setCebas] = useState<Ceba[]>([]);
@@ -113,6 +115,7 @@ export default function Docentes() {
       return;
     }
     setEditando(null);
+    toast.success("Docente actualizado.");
     cargar();
   }
 
@@ -126,6 +129,7 @@ export default function Docentes() {
       setBorrarDocente(null);
       return;
     }
+    toast.success("Docente eliminado.");
     setBorrarDocente(null);
     cargar();
   }

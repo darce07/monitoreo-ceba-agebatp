@@ -5,9 +5,11 @@ import { supabase, type Monitoreo, type Profile } from "../lib/supabase";
 import { Card, Button, Input, Alert, PageHeader, EmptyState, Skeleton, Badge } from "../components/ui";
 import { Field } from "../components/form-field";
 import { ConfirmDialog } from "../components/confirm-dialog";
+import { useToast } from "../components/toast";
 
 export default function Monitoreos() {
   const profile = useOutletContext<Profile>();
+  const toast = useToast();
   const puedeEditar = profile.role === "especialista";
   const [monitoreos, setMonitoreos] = useState<Monitoreo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,23 +53,29 @@ export default function Monitoreos() {
   async function guardar() {
     setGuardando(true);
     setError(null);
-    if (editando) {
-      const { error } = await supabase.from("monitoreos_pedagogicos").update({ codigo: codigo.trim(), nombre: nombre.trim() }).eq("id", editando.id);
-      if (error) setError(error.message);
-    } else {
-      const siguienteOrden = monitoreos.length ? Math.max(...monitoreos.map((m) => m.orden)) + 1 : 1;
-      const { error } = await supabase.from("monitoreos_pedagogicos").insert({ codigo: codigo.trim(), nombre: nombre.trim(), orden: siguienteOrden });
-      if (error) setError(error.message);
-    }
+    const { error } = editando
+      ? await supabase.from("monitoreos_pedagogicos").update({ codigo: codigo.trim(), nombre: nombre.trim() }).eq("id", editando.id)
+      : await supabase.from("monitoreos_pedagogicos").insert({
+          codigo: codigo.trim(),
+          nombre: nombre.trim(),
+          orden: monitoreos.length ? Math.max(...monitoreos.map((m) => m.orden)) + 1 : 1,
+        });
     setGuardando(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(editando ? "Monitoreo actualizado." : "Monitoreo creado.");
     setCreando(false);
     cargar();
   }
 
   async function alternarActivo(m: Monitoreo) {
-    setError(null);
     const { error } = await supabase.from("monitoreos_pedagogicos").update({ activo: !m.activo }).eq("id", m.id);
-    if (error) setError(`No se pudo cambiar el estado: ${error.message}`);
+    if (error) {
+      toast.error(`No se pudo cambiar el estado: ${error.message}`);
+      return;
+    }
     cargar();
   }
 
@@ -77,7 +85,11 @@ export default function Monitoreos() {
     const { error } = await supabase.from("monitoreos_pedagogicos").delete().eq("id", borrar.id);
     setBorrando(false);
     setBorrar(null);
-    if (error) setError(`No se pudo eliminar: si ya hay fichas usando este monitoreo, desactivalo en vez de borrarlo.`);
+    if (error) {
+      toast.error("No se pudo eliminar: si ya hay fichas usando este monitoreo, desactivalo en vez de borrarlo.");
+      return;
+    }
+    toast.success("Monitoreo eliminado.");
     cargar();
   }
 

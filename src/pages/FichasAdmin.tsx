@@ -8,6 +8,7 @@ import { ESTADO_TONE } from "../lib/utils";
 import { Card, Button, Select, Input, Badge, Alert, PageHeader, EmptyState, Skeleton } from "../components/ui";
 import { Field } from "../components/form-field";
 import { ConfirmDialog } from "../components/confirm-dialog";
+import { useToast } from "../components/toast";
 
 const AREAS = ["Comunicación", "Matemática", "Ciencia y Tecnología", "Ciencias Sociales", "Otra"];
 const ESTADOS: Ficha["estado"][] = ["Pendiente", "Recibido", "Observado"];
@@ -15,6 +16,7 @@ const PAGE_SIZE = 15;
 
 export default function FichasAdmin() {
   const profile = useOutletContext<Profile>();
+  const toast = useToast();
   const puedeEditarCampos = profile.role === "director";
   const puedeRevisar = profile.role === "especialista";
   const [fichas, setFichas] = useState<Ficha[]>([]);
@@ -114,6 +116,7 @@ export default function FichasAdmin() {
       setError(`Error al eliminar: ${error.message}`);
       return;
     }
+    toast.success("Ficha eliminada.");
     setBorrarFicha(null);
     cargar();
   }
@@ -319,6 +322,7 @@ export default function FichasAdmin() {
           onVer={() => verFicha(panelFicha.storage_path)}
           onClose={() => setPanelFicha(null)}
           onSaved={() => {
+            toast.success(puedeRevisar ? "Revisión guardada." : "Ficha actualizada.");
             setPanelFicha(null);
             cargar();
           }}

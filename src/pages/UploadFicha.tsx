@@ -7,6 +7,7 @@ import { ESTADO_TONE } from "../lib/utils";
 import { Card, Button, Select, Input, Badge, Alert, PageHeader } from "../components/ui";
 import { Field } from "../components/form-field";
 import { ConfirmDialog } from "../components/confirm-dialog";
+import { useToast } from "../components/toast";
 
 const AREAS = ["Comunicación", "Matemática", "Ciencia y Tecnología", "Ciencias Sociales", "Otra"];
 const NUEVO_DOCENTE = "__nuevo__";
@@ -26,6 +27,7 @@ function extensionDe(nombreArchivo: string) {
 }
 
 export default function UploadFicha({ profile }: { profile: Profile }) {
+  const toast = useToast();
   const [ceba, setCeba] = useState<Ceba | null>(null);
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [docentes, setDocentes] = useState<Docente[]>([]);
@@ -202,6 +204,7 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
     setSaving(false);
     setStatus(`Ficha subida como ${nombreArchivo}`);
     setStatusError(false);
+    toast.success("Ficha registrada correctamente.");
     setDocenteId("");
     setNuevoNombres("");
     setNuevoApPaterno("");
@@ -223,6 +226,7 @@ export default function UploadFicha({ profile }: { profile: Profile }) {
       setBorrarFicha(null);
       return;
     }
+    toast.success("Ficha eliminada.");
     setBorrarFicha(null);
     loadFichas();
   }

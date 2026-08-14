@@ -5,13 +5,14 @@ import { listarUsuarios, crearUsuario, resetearPassword, eliminarUsuario, cambia
 import { Card, Button, Select, Input, Badge, Alert, PageHeader, Skeleton } from "../components/ui";
 import { Field } from "../components/form-field";
 import { ConfirmDialog } from "../components/confirm-dialog";
+import { useToast } from "../components/toast";
 
 export default function Usuarios() {
+  const toast = useToast();
   const [usuarios, setUsuarios] = useState<UsuarioAdmin[]>([]);
   const [cebas, setCebas] = useState<Ceba[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(null);
 
   const [mostrarAlta, setMostrarAlta] = useState(false);
   const [nombre, setNombre] = useState("");
@@ -50,10 +51,9 @@ export default function Usuarios() {
     e.preventDefault();
     setCreando(true);
     setError(null);
-    setOk(null);
     try {
       await crearUsuario({ email, password, nombre, role, ceba_id: role === "director" ? cebaId : null });
-      setOk(`Usuario ${email} creado correctamente.`);
+      toast.success(`Usuario ${email} creado correctamente.`);
       setNombre("");
       setEmail("");
       setPassword("");
@@ -71,7 +71,7 @@ export default function Usuarios() {
     setReseteando(true);
     try {
       await resetearPassword(resetUser.id, nuevaClave);
-      setOk(`Contraseña actualizada para ${resetUser.email}.`);
+      toast.success(`Contraseña actualizada para ${resetUser.email}.`);
       setResetUser(null);
       setNuevaClave("");
     } catch (e) {
@@ -85,6 +85,7 @@ export default function Usuarios() {
     setBorrando(true);
     try {
       await eliminarUsuario(borrarUser.id);
+      toast.success("Usuario eliminado.");
       setBorrarUser(null);
       cargar();
     } catch (e) {
@@ -113,7 +114,6 @@ export default function Usuarios() {
       </div>
 
       {error && <Alert variant="error">{error}</Alert>}
-      {ok && <Alert variant="info">{ok}</Alert>}
 
       {mostrarAlta && (
         <Card className="animate-slide-up p-6">
@@ -197,7 +197,7 @@ export default function Usuarios() {
                   usuario={u}
                   cebas={cebas}
                   onRolCambiado={(msg) => {
-                    setOk(msg);
+                    toast.success(msg);
                     cargar();
                   }}
                   onError={setError}

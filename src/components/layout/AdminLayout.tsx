@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Bell, LayoutDashboard, FileText, Users, UserCog, UploadCloud, CalendarDays, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, X, type LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -47,7 +47,11 @@ const ROL_LABEL: Record<Profile["role"], string> = {
 
 export function AdminLayout({ profile }: { profile: Profile }) {
   const location = useLocation();
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    const guardado = localStorage.getItem("theme");
+    if (guardado === "dark" || guardado === "light") return guardado;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const displayName = profile.nombre ?? "Especialista";
@@ -55,10 +59,14 @@ export function AdminLayout({ profile }: { profile: Profile }) {
     displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "A";
   const navGroups = navGroupsPara(profile.role);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [theme]);
+
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
-    document.documentElement.classList.toggle("dark", next === "dark");
+    localStorage.setItem("theme", next);
   };
 
   return (
